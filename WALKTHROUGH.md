@@ -9,6 +9,11 @@ This document tracks the initial setup and verification of the 36-hour hackathon
 - Bootstrapped project using `create-next-app@14.2.16`.
 - Configured TypeScript, Tailwind CSS, and ESLint.
 - Set up App Router architecture.
+- Integrated Supabase:
+    - Installed `@supabase/supabase-js` and `@supabase/ssr`.
+    - Configured `.env.local` and `.env.example`.
+    - Set up server-side and client-side clients in `lib/supabase`.
+    - Implemented middleware for session management.
 
 ### 2. Agent Skills Setup
 - Installed specialized agent skills for API design, backend architecture, and pattern recognition.

@@ -63,54 +63,7 @@ if gemini_api_key:
     genai.configure(api_key=gemini_api_key)
 
 
-# --- Pydantic models for API ---
-
-class ChatMessage(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str
-
-
-class ProjectChatRequest(BaseModel):
-    project_id: str
-    project_title: str
-    project_description: str
-    client_persona: str
-    client_mood: str
-    messages: list[ChatMessage]
-    language: Literal["en", "ar"]
-    code_context: str | None = None
-
-
-class CodeReviewRequest(BaseModel):
-    project_id: str
-    project_title: str
-    project_description: str
-    code: str
-    language: str
-    language_hint: Literal["en", "ar"] | None = None
-
-
-# --- System prompts for Gemini ---
-
-def _customer_system_prompt(req: ProjectChatRequest) -> str:
-    code_block = ""
-    if req.code_context and req.code_context.strip():
-        code_block = f"\n\nCurrent code from the intern (you may reference specific lines or point out issues):\n```\n{req.code_context.strip()[:8000]}\n```"
-    lang = req.language
-    if lang == "ar":
-        return f"""أنت عميل محاكى في مشروع تدريب داخلي افتراضي. تجسد شخصية: {req.client_persona}. مزاجك: {req.client_mood}.
-المشروع: {req.project_title}
-الوصف: {req.project_description}
-{code_block}
-
-أجب دائماً بالعربية، بصفة هذا العميل. إذا وُجد كود، يمكنك التعليق على أجزاء منه أو طلب تعديلات. كن واقعياً."""
-    return f"""You are a simulated client in a virtual internship. Persona: {req.client_persona}. Mood: {req.client_mood}.
-Project: {req.project_title}
-Description: {req.project_description}
-{code_block}
-
-Always answer in English as this client. If code is provided, you may reference specific parts or ask for changes. Be realistic."""
-
+# --- System prompts (chat uses llm_service; review prompt below) ---
 
 def _review_system_prompt(req: CodeReviewRequest) -> str:
     hint = "Respond in Arabic when possible." if req.language_hint == "ar" else "Respond in English."
@@ -136,8 +89,14 @@ async def generate_simulation(request: GenerateSimulationRequest):
             request.title, request.context, request.level
         )
     except Exception as e:
+        err_msg = str(e)
         print(f"LLM Generation Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini API quota exceeded (free tier is limited). Please try again in a few minutes or check https://ai.google.dev/gemini-api/docs/rate-limits",
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
     
     # 2. Save to Supabase
     dummy_user_id = str(uuid.uuid4()) 

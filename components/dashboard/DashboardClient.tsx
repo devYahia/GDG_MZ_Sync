@@ -44,7 +44,7 @@ export function DashboardClient({ userName, fieldKey, experienceLevel }: Dashboa
         },
         {
             label: "Difficulty Levels",
-            value: "L1 – L7",
+            value: "L1 – L8",
             icon: Target,
             gradient: "from-amber-500 to-orange-600",
             bgGlow: "bg-amber-500/10",

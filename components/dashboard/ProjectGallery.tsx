@@ -2,13 +2,15 @@
 
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Search, Sparkles, SlidersHorizontal } from "lucide-react"
+import { Search, Sparkles, SlidersHorizontal, Filter } from "lucide-react"
 
 import { TaskCard } from "@/components/dashboard/TaskCard"
 import { TASKS, FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 import { cn } from "@/lib/utils"
 
-// Tab definitions — "all" plus each field
+const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
+
+// Tab definitions — "all" plus each field (tracks)
 const TABS: { id: string; label: string; field?: TaskField }[] = [
     { id: "all", label: "All" },
     { id: "frontend", label: "Frontend", field: "frontend" },
@@ -21,16 +23,23 @@ const TABS: { id: string; label: string; field?: TaskField }[] = [
 
 export function ProjectGallery() {
     const [activeTab, setActiveTab] = useState("all")
+    const [selectedLevel, setSelectedLevel] = useState<number | "all">("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [showSearch, setShowSearch] = useState(false)
+    const [showLevelFilter, setShowLevelFilter] = useState(false)
 
     const filteredTasks = useMemo(() => {
         let tasks = TASKS
 
-        // Filter by tab
+        // Filter by track (tab)
         const tab = TABS.find((t) => t.id === activeTab)
         if (tab?.field) {
             tasks = tasks.filter((t) => t.field === tab.field)
+        }
+
+        // Filter by level (1–8)
+        if (selectedLevel !== "all") {
+            tasks = tasks.filter((t) => t.level === selectedLevel)
         }
 
         // Filter by search
@@ -46,7 +55,7 @@ export function ProjectGallery() {
         }
 
         return tasks
-    }, [activeTab, searchQuery])
+    }, [activeTab, selectedLevel, searchQuery])
 
     return (
         <section className="space-y-6">
@@ -62,20 +71,75 @@ export function ProjectGallery() {
                     </div>
                 </div>
 
-                {/* Search toggle */}
-                <button
-                    onClick={() => setShowSearch(!showSearch)}
-                    className={cn(
-                        "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
-                        showSearch
-                            ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
-                            : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
-                    )}
-                >
-                    <Search className="h-3.5 w-3.5" />
-                    Search
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowLevelFilter(!showLevelFilter)}
+                        className={cn(
+                            "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
+                            showLevelFilter || selectedLevel !== "all"
+                                ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
+                                : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                        )}
+                    >
+                        <Filter className="h-3.5 w-3.5" />
+                        Level {selectedLevel === "all" ? "1–8" : selectedLevel}
+                    </button>
+                    <button
+                        onClick={() => setShowSearch(!showSearch)}
+                        className={cn(
+                            "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
+                            showSearch
+                                ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
+                                : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                        )}
+                    >
+                        <Search className="h-3.5 w-3.5" />
+                        Search
+                    </button>
+                </div>
             </div>
+
+            {/* Level filter (1–8) */}
+            <AnimatePresence>
+                {showLevelFilter && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="flex flex-wrap items-center gap-2 py-2">
+                            <span className="text-xs text-white/40 mr-1">Level:</span>
+                            <button
+                                onClick={() => setSelectedLevel("all")}
+                                className={cn(
+                                    "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
+                                    selectedLevel === "all"
+                                        ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
+                                        : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                )}
+                            >
+                                All
+                            </button>
+                            {LEVELS.map((level) => (
+                                <button
+                                    key={level}
+                                    onClick={() => setSelectedLevel(level)}
+                                    className={cn(
+                                        "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
+                                        selectedLevel === level
+                                            ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
+                                            : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                    )}
+                                >
+                                    L{level}
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Search bar (collapsible) */}
             <AnimatePresence>

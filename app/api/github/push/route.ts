@@ -10,6 +10,8 @@ interface PushBody {
   branch: string
   commitMessage: string
   code: string
+  /** Optional: multiple files to push (path -> content). If provided, used instead of single code. */
+  files?: Record<string, string>
   projectTitle: string
   accessToken: string
 }
@@ -21,11 +23,18 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = (await request.json()) as PushBody
-    const { repo, branch, commitMessage, code, projectTitle, accessToken } = body
+    const { repo, branch, commitMessage, code, files: filesMap, projectTitle, accessToken } = body
 
-    if (!repo?.trim() || !branch?.trim() || !code || !accessToken) {
+    const hasFiles = filesMap && Object.keys(filesMap).length > 0
+    if (!repo?.trim() || !branch?.trim() || !accessToken) {
       return NextResponse.json(
-        { error: "Missing repo, branch, code, or accessToken" },
+        { error: "Missing repo, branch, or accessToken" },
+        { status: 400 }
+      )
+    }
+    if (!hasFiles && code == null) {
+      return NextResponse.json(
+        { error: "Missing code or files" },
         { status: 400 }
       )
     }
@@ -51,17 +60,21 @@ export async function POST(request: NextRequest) {
       sha: baseSha,
     })
 
-    const fileName = "solution.js"
-    const content = Buffer.from(code, "utf8").toString("base64")
+    const filesToPush = hasFiles
+      ? Object.entries(filesMap!)
+      : [["solution.js", code as string]]
 
-    await octokit.rest.repos.createOrUpdateFileContents({
-      owner,
-      repo: repoName,
-      path: fileName,
-      message: commitMessage || `Interna: ${projectTitle}`,
-      content,
-      branch,
-    })
+    for (const [path, fileContent] of filesToPush) {
+      const content = Buffer.from(fileContent, "utf8").toString("base64")
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner,
+        repo: repoName,
+        path: path,
+        message: commitMessage || `Interna: ${projectTitle}`,
+        content,
+        branch,
+      })
+    }
 
     const pr = await octokit.rest.pulls.create({
       owner,

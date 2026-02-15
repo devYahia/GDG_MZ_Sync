@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Sparkles, Zap } from "lucide-react"
 import type { SimulationTask } from "@/lib/tasks"
-import { generateSimulation, type SimulationData } from "@/lib/api"
+import { generateSimulation, type SimulationData, postProjectChat, type ChatMessage } from "@/lib/api"
 import { ProjectSidebar, type SidebarItem } from "./ProjectSidebar"
 import { ProjectDescription } from "./ProjectDescription"
 import { ProjectChat } from "./ProjectChat"
@@ -27,6 +27,8 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [activeId, setActiveId] = useState("description")
+    // Separate chat thread per persona (e.g. messagesByPersona["persona-0"])
+    const [messagesByPersona, setMessagesByPersona] = useState<Record<string, ChatMessage[]>>({})
 
     const generate = useCallback(async () => {
         setIsLoading(true)
@@ -145,6 +147,7 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
     ]
 
     return (
+        <ProjectWorkspaceProvider initialCode="// Implement your solution here.\n// Push to GitHub from the toolbar when ready.\n">
         <div className="flex flex-1 min-h-0">
             {/* Left: Sidebar Navigation */}
             <div className="flex w-[240px] shrink-0 min-w-0 flex-col">
@@ -155,7 +158,7 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                 />
             </div>
 
-            {/* Middle: Content Area */}
+            {/* Middle: Content Area — Description or separate chat per persona */}
             <div className="flex flex-1 min-w-0 flex-col border-r border-white/10">
                 {activeId === "description" && simulation ? (
                     <ProjectDescription
@@ -171,17 +174,72 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                         milestones={simulation.milestones}
                     />
                 ) : (
-                    <ProjectChat task={task} />
+                    <ProjectChat
+                        task={task}
+                        personaId={activeId.startsWith("persona-") ? activeId : undefined}
+                        persona={activeId.startsWith("persona-") && simulation
+                            ? simulation.personas[parseInt(activeId.replace("persona-", ""), 10)]
+                            : undefined}
+                        simulation={simulation ?? undefined}
+                        messages={activeId.startsWith("persona-") ? (messagesByPersona[activeId] ?? []) : undefined}
+                        onSendMessage={activeId.startsWith("persona-") && simulation
+                            ? async (text, codeContext) => {
+                                const userMsg: ChatMessage = { role: "user", content: text }
+                                const thread = messagesByPersona[activeId] ?? []
+                                setMessagesByPersona((prev) => ({ ...prev, [activeId]: [...thread, userMsg] }))
+                                try {
+                                    const persona = simulation.personas[parseInt(activeId.replace("persona-", ""), 10)]
+                                    const res = await postProjectChat({
+                                        project_id: task.id,
+                                        project_title: task.title,
+                                        project_description: task.description,
+                                        client_persona: persona?.name ?? task.clientPersona,
+                                        client_mood: task.clientMood,
+                                        messages: [...thread, userMsg],
+                                        language: "en",
+                                        level: task.level ?? 1,
+                                        code_context: codeContext?.trim() || undefined,
+                                        persona: persona ? {
+                                            name: persona.name,
+                                            role: persona.role,
+                                            personality: persona.personality,
+                                            system_prompt: persona.system_prompt,
+                                            initial_message: persona.initial_message,
+                                        } : undefined,
+                                        simulation_context: {
+                                            overview: simulation.overview,
+                                            learning_objectives: simulation.learning_objectives,
+                                            functional_requirements: simulation.functional_requirements,
+                                            non_functional_requirements: simulation.non_functional_requirements,
+                                            milestones: simulation.milestones,
+                                            domain: simulation.domain,
+                                            difficulty: simulation.difficulty,
+                                            tech_stack: simulation.tech_stack,
+                                        },
+                                    })
+                                    setMessagesByPersona((prev) => ({
+                                        ...prev,
+                                        [activeId]: [...(prev[activeId] ?? []), { role: "assistant", content: res.reply }],
+                                    }))
+                                } catch (e) {
+                                    const err = e instanceof Error ? e.message : "Something went wrong"
+                                    setMessagesByPersona((prev) => ({
+                                        ...prev,
+                                        [activeId]: [...(prev[activeId] ?? []), { role: "assistant", content: `[Error: ${err}]` }],
+                                    }))
+                                }
+                            }
+                            : undefined}
+                    />
                 )}
             </div>
 
             {/* Right: VS Code-style sandbox (Monaco editor + AI review + Push to GitHub) */}
             <div className="flex w-[40%] min-w-0 flex-col">
                 <ProjectPresence projectId={task.id} />
-                <ProjectWorkspaceProvider initialCode="// Implement your solution here.\n// Push to GitHub from the toolbar when ready.\n">
-                    <ProjectIDE task={task} />
-                </ProjectWorkspaceProvider>
+                <ProjectIDE task={task} />
             </div>
         </div>
+        </ProjectWorkspaceProvider>
     )
 }

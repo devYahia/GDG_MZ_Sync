@@ -6,18 +6,16 @@ import { Sparkles, FolderKanban } from "lucide-react"
 
 import { TaskCard } from "@/components/dashboard/TaskCard"
 import { TaskFilters } from "@/components/dashboard/TaskFilters"
-import { TASKS, type TaskField, type TaskDifficulty } from "@/lib/tasks"
+import { TASKS, type TaskField } from "@/lib/tasks"
 
 export function TaskGrid() {
     const [selectedTracks, setSelectedTracks] = useState<TaskField[]>([])
-    const [selectedDifficulties, setSelectedDifficulties] = useState<TaskDifficulty[]>([])
     const [selectedLevels, setSelectedLevels] = useState<number[]>([])
     const [searchQuery, setSearchQuery] = useState("")
 
     const filteredTasks = useMemo(() => {
         return TASKS.filter((task) => {
             if (selectedTracks.length > 0 && !selectedTracks.includes(task.field)) return false
-            if (selectedDifficulties.length > 0 && !selectedDifficulties.includes(task.difficulty)) return false
             if (selectedLevels.length > 0 && !selectedLevels.includes(task.level)) return false
             if (searchQuery) {
                 const q = searchQuery.toLowerCase()
@@ -30,7 +28,7 @@ export function TaskGrid() {
             }
             return true
         })
-    }, [selectedTracks, selectedDifficulties, selectedLevels, searchQuery])
+    }, [selectedTracks, selectedLevels, searchQuery])
 
     return (
         <div className="space-y-6">
@@ -42,15 +40,13 @@ export function TaskGrid() {
             >
                 <FolderKanban className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Projects</h2>
-                <span className="text-sm text-muted-foreground">Filter by track, difficulty & level</span>
+                <span className="text-sm text-muted-foreground">Filter by track & level</span>
             </motion.div>
             <TaskFilters
                 selectedTracks={selectedTracks}
-                selectedDifficulties={selectedDifficulties}
                 selectedLevels={selectedLevels}
                 searchQuery={searchQuery}
                 onTracksChange={setSelectedTracks}
-                onDifficultiesChange={setSelectedDifficulties}
                 onLevelsChange={setSelectedLevels}
                 onSearchChange={setSearchQuery}
             />

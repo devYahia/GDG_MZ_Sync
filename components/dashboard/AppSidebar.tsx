@@ -15,6 +15,7 @@ import {
   Sun,
   BookOpen,
   Target,
+  UsersRound,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "motion/react"
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/dashboard", label: "Projects", icon: FolderKanban, exact: false },
   { href: "/dashboard", label: "My Progress", icon: Target, exact: false },
+  { href: "/dashboard/mentor", label: "Mentor", icon: UsersRound, exact: false },
   { href: "/dashboard", label: "Resources", icon: BookOpen, exact: false },
 ]
 
@@ -44,8 +46,9 @@ export function AppSidebar() {
   useEffect(() => { setMounted(true) }, [])
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard" || pathname.startsWith("/dashboard/project")
-    return pathname.startsWith(href)
+    if (href === "/dashboard/mentor") return pathname?.startsWith("/dashboard/mentor")
+    if (href === "/dashboard") return pathname === "/dashboard" || pathname?.startsWith("/dashboard/project")
+    return pathname?.startsWith(href)
   }
 
   return (

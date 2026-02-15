@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import {
     type SimulationTask,
     FIELD_CONFIG,
-    DIFFICULTY_CONFIG,
 } from "@/lib/tasks"
 import { cn } from "@/lib/utils"
 
@@ -21,14 +20,13 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
     const fieldConfig = FIELD_CONFIG[task.field]
-    const diffConfig = DIFFICULTY_CONFIG[task.difficulty]
     const FieldIcon = fieldConfig.icon
 
     return (
         <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
             <Card className="group h-full overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 dark:bg-card/60">
                 <CardContent className="flex flex-col gap-4 p-5">
-                    {/* Header: Field + Difficulty */}
+                    {/* Header: Track */}
                     <div className="flex items-center justify-between">
                         <div
                             className={cn(
@@ -40,20 +38,6 @@ export function TaskCard({ task }: TaskCardProps) {
                         >
                             <FieldIcon className="h-3 w-3" />
                             {fieldConfig.label}
-                        </div>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={cn(
-                                        "h-1.5 w-1.5 rounded-full",
-                                        i < diffConfig.dots ? diffConfig.color.replace("text-", "bg-") : "bg-muted"
-                                    )}
-                                />
-                            ))}
-                            <span className={cn("ml-1 text-xs", diffConfig.color)}>
-                                {diffConfig.label}
-                            </span>
                         </div>
                     </div>
 

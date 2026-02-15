@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { motion } from "motion/react"
 import { AppSidebar } from "@/components/dashboard/AppSidebar"
 import { AppNavbar } from "@/components/dashboard/AppNavbar"
@@ -14,7 +15,13 @@ function DashboardShellInner({
   userName: string
   userEmail: string
 }) {
+  const pathname = usePathname()
   const { width } = useSidebar()
+  const isProjectPage = pathname?.startsWith("/dashboard/project")
+
+  if (isProjectPage) {
+    return <>{children}</>
+  }
 
   return (
     <>

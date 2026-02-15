@@ -47,6 +47,70 @@ if url and key:
 else:
     print("Warning: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found.")
 
+# Gemini
+gemini_api_key = os.environ.get("GEMINI_API_KEY")
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
+
+
+# --- Pydantic models for API ---
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ProjectChatRequest(BaseModel):
+    project_id: str
+    project_title: str
+    project_description: str
+    client_persona: str
+    client_mood: str
+    messages: list[ChatMessage]
+    language: Literal["en", "ar"]
+    code_context: str | None = None
+
+
+class CodeReviewRequest(BaseModel):
+    project_id: str
+    project_title: str
+    project_description: str
+    code: str
+    language: str
+    language_hint: Literal["en", "ar"] | None = None
+
+
+# --- System prompts for Gemini ---
+
+def _customer_system_prompt(req: ProjectChatRequest) -> str:
+    code_block = ""
+    if req.code_context and req.code_context.strip():
+        code_block = f"\n\nCurrent code from the intern (you may reference specific lines or point out issues):\n```\n{req.code_context.strip()[:8000]}\n```"
+    lang = req.language
+    if lang == "ar":
+        return f"""أنت عميل محاكى في مشروع تدريب داخلي افتراضي. تجسد شخصية: {req.client_persona}. مزاجك: {req.client_mood}.
+المشروع: {req.project_title}
+الوصف: {req.project_description}
+{code_block}
+
+أجب دائماً بالعربية، بصفة هذا العميل. إذا وُجد كود، يمكنك التعليق على أجزاء منه أو طلب تعديلات. كن واقعياً."""
+    return f"""You are a simulated client in a virtual internship. Persona: {req.client_persona}. Mood: {req.client_mood}.
+Project: {req.project_title}
+Description: {req.project_description}
+{code_block}
+
+Always answer in English as this client. If code is provided, you may reference specific parts or ask for changes. Be realistic."""
+
+
+def _review_system_prompt(req: CodeReviewRequest) -> str:
+    hint = "Respond in Arabic when possible." if req.language_hint == "ar" else "Respond in English."
+    return f"""You are an experienced developer reviewing intern code for this project:
+Title: {req.project_title}
+Description: {req.project_description}
+
+Review the code for correctness, clarity, and fit to the project. Be constructive. {hint}
+
+Reply with a short feedback paragraph, then conclude with exactly one line: APPROVED or NOT_APPROVED."""
 # Gemini API Key check (optional, but good for fast fail)
 if not os.environ.get("GEMINI_API_KEY"):
     print("Warning: GEMINI_API_KEY not found. LLM features will fail.")

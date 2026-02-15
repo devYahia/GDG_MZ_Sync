@@ -1,68 +1,99 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useCallback, useEffect } from "react"
+import { GripVertical } from "lucide-react"
 import type { SimulationTask } from "@/lib/tasks"
-import { ProjectSidebar, type SidebarItem } from "./ProjectSidebar"
-import { ProjectDescription } from "./ProjectDescription"
+import { ProjectWorkspaceProvider } from "./ProjectWorkspaceContext"
 import { ProjectChat } from "./ProjectChat"
-import { IDEPlaceholder } from "./IDEPlaceholder"
+import { ProjectIDE } from "./ProjectIDE"
+import { ProjectPresence } from "./ProjectPresence"
+import { cn } from "@/lib/utils"
+
+const DEFAULT_CODE = `// Implement your solution here.
+// The customer (AI) can see this code when you chat — ask for feedback on specific parts.
+`
+
+const MIN_PANE_PERCENT = 25
+const MAX_PANE_PERCENT = 75
+const DEFAULT_CHAT_PERCENT = 50
+
+function useReportProgress(projectId: string) {
+  useEffect(() => {
+    if (!projectId) return
+    fetch("/api/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project_id: projectId, status: "in_progress" }),
+    }).catch(() => {})
+  }, [projectId])
+}
 
 interface ProjectViewProps {
   task: SimulationTask
 }
 
 export function ProjectView({ task }: ProjectViewProps) {
-  const [activeId, setActiveId] = useState("description")
+  const [chatPercent, setChatPercent] = useState(DEFAULT_CHAT_PERCENT)
+  const [isDragging, setIsDragging] = useState(false)
+  useReportProgress(task.id)
 
-  // Build sidebar items: Description + Personas from task
-  const sidebarItems: SidebarItem[] = useMemo(() => {
-    const items: SidebarItem[] = [
-      {
-        id: "description",
-        label: "Project Description",
-        type: "description",
-      },
-    ]
+  const handleMove = useCallback(
+    (e: MouseEvent) => {
+      const total = window.innerWidth
+      const percent = (e.clientX / total) * 100
+      setChatPercent(Math.max(MIN_PANE_PERCENT, Math.min(MAX_PANE_PERCENT, percent)))
+    },
+    []
+  )
 
-    // Add a persona entry for the client persona from the task
-    if (task.clientPersona) {
-      items.push({
-        id: "persona-client",
-        label: `Chat with ${task.clientPersona}`,
-        type: "persona",
-      })
+  const handleUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    if (!isDragging) return
+    window.addEventListener("mousemove", handleMove)
+    window.addEventListener("mouseup", handleUp)
+    return () => {
+      window.removeEventListener("mousemove", handleMove)
+      window.removeEventListener("mouseup", handleUp)
     }
-
-    return items
-  }, [task])
+  }, [isDragging, handleMove, handleUp])
 
   return (
-    <div className="flex flex-1 min-h-0">
-      {/* Left: Sidebar Navigation (~18%) */}
-      <div className="flex w-[240px] shrink-0 min-w-0 flex-col">
-        <ProjectSidebar
-          items={sidebarItems}
-          activeId={activeId}
-          onSelect={setActiveId}
-        />
-      </div>
-
-      {/* Middle: Content Area (~42%) */}
-      <div className="flex flex-1 min-w-0 flex-col border-r border-white/10">
-        {activeId === "description" ? (
-          <ProjectDescription
-            title={task.title}
-            overview={task.description}
-          />
-        ) : (
+    <ProjectWorkspaceProvider initialCode={DEFAULT_CODE}>
+      <div className="flex flex-1 min-h-0 bg-background text-foreground">
+        {/* Left half: AI Customer Chat — ask about the challenge / task */}
+        <div
+          className="flex shrink-0 flex-col min-h-0 border-r border-border bg-card/30"
+          style={{ width: `${chatPercent}%` }}
+        >
+          <ProjectPresence projectId={task.id} />
           <ProjectChat task={task} />
-        )}
-      </div>
+        </div>
 
-      {/* Right: IDE Placeholder (~40%) */}
-      <div className="flex w-[40%] min-w-0 flex-col">
-        <IDEPlaceholder />
+        {/* Resizable divider */}
+        <button
+          type="button"
+          aria-label="Resize panels"
+          onMouseDown={() => setIsDragging(true)}
+          className={cn(
+            "shrink-0 w-2 flex items-center justify-center bg-border hover:bg-primary/40 transition-colors cursor-col-resize select-none",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ring-inset",
+            isDragging && "bg-primary/50"
+          )}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+
+        {/* Right half: IDE Sandbox — implement code, reviewed by AI */}
+        <div
+          className="flex flex-1 flex-col min-w-0 min-h-0 bg-card/20"
+          style={{ width: `${100 - chatPercent}%` }}
+        >
+          <ProjectIDE task={task} />
+        </div>
       </div>
-    </div>
+    </ProjectWorkspaceProvider>
   )
 }

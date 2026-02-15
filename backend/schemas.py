@@ -42,6 +42,25 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str
     
+class PersonaChatInfo(BaseModel):
+    """One specific persona for role-play; each persona has its own chat."""
+    name: str
+    role: str
+    personality: str
+    system_prompt: str
+    initial_message: str
+
+class SimulationContextForChat(BaseModel):
+    """Full project context so the client persona can answer in detail."""
+    overview: Optional[str] = None
+    learning_objectives: Optional[List[str]] = None
+    functional_requirements: Optional[List[str]] = None
+    non_functional_requirements: Optional[List[str]] = None
+    milestones: Optional[List[Milestone]] = None
+    domain: Optional[str] = None
+    difficulty: Optional[str] = None
+    tech_stack: Optional[List[str]] = None
+
 class ProjectChatRequest(BaseModel):
     project_id: str
     project_title: str
@@ -50,6 +69,11 @@ class ProjectChatRequest(BaseModel):
     client_mood: str
     messages: List[ChatMessage]
     language: Literal["en", "ar"]
+    level: Optional[int] = 1  # 1-8: affects customer tone (friendly low, varied/harsh high)
+    code_context: Optional[str] = None
+    # When chatting with a specific generated persona (separate chat per persona)
+    persona: Optional[PersonaChatInfo] = None
+    simulation_context: Optional[SimulationContextForChat] = None
 
 class CodeReviewRequest(BaseModel):
     project_id: str

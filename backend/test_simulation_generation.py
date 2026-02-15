@@ -132,7 +132,7 @@ def generate_simulation(title: str, context: str, level: str, level_description:
     """Call Gemini via LangChain and return structured SimulationOutput."""
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite",
+        model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
         google_api_key=GEMINI_API_KEY,
         temperature=0.7,
     )

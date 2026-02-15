@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Literal, List, Optional
 from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
@@ -47,10 +49,7 @@ if url and key:
 else:
     print("Warning: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found.")
 
-# Gemini
-gemini_api_key = os.environ.get("GEMINI_API_KEY")
-if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
+# Gemini API key is used by llm_service.py via GEMINI_API_KEY env var
 
 
 # --- Pydantic models for API ---

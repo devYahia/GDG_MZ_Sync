@@ -33,6 +33,7 @@ export const LEVEL_CONFIG: TaskLevel[] = [
     { levelNumber: 5, customerDifficulty: "hard", projectDifficulty: "medium", label: "Level 5 — Demanding client" },
     { levelNumber: 6, customerDifficulty: "medium", projectDifficulty: "hard", label: "Level 6 — Complex project" },
     { levelNumber: 7, customerDifficulty: "hard", projectDifficulty: "hard", label: "Level 7 — Full challenge" },
+    { levelNumber: 8, customerDifficulty: "hard", projectDifficulty: "hard", label: "Level 8 — Expert pressure" },
 ]
 
 export interface SimulationTask {
@@ -228,6 +229,20 @@ export const TASKS: SimulationTask[] = [
         level: 6,
         duration: "55 min",
         tools: ["Python", "Pandas", "SQL"],
+    },
+    {
+        id: "legacy-migration",
+        title: "Legacy System Migration",
+        description:
+            "A stressed CTO needs a migration plan from a legacy monolith to microservices. Tight deadlines, unclear priorities, and multiple stakeholders with conflicting demands.",
+        clientPersona: "Overwhelmed CTO",
+        clientMood: "Under pressure",
+        field: "fullstack",
+        difficulty: "hard",
+        customerDifficulty: "hard",
+        level: 8,
+        duration: "60 min",
+        tools: ["Architecture", "APIs", "Documentation"],
     },
     {
         id: "mobile-auth-ui",

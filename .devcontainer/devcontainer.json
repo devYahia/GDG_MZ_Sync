@@ -1,0 +1,25 @@
+{
+  "name": "GDG MZ Sync",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "forwardPorts": [3000, 8000],
+  "portsAttributes": {
+    "3000": { "label": "Next.js" },
+    "8000": { "label": "Backend API" }
+  },
+  "postCreateCommand": "npm ci && pip install -r backend/requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "ms-python.python"
+      ]
+    }
+  }
+}

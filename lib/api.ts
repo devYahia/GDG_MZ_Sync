@@ -7,6 +7,27 @@ export interface ChatMessage {
   content: string
 }
 
+/** One persona for role-play; each has its own chat. */
+export interface PersonaChatInfo {
+  name: string
+  role: string
+  personality: string
+  system_prompt: string
+  initial_message: string
+}
+
+/** Full project context so the client can answer in detail. */
+export interface SimulationContextForChat {
+  overview?: string
+  learning_objectives?: string[]
+  functional_requirements?: string[]
+  non_functional_requirements?: string[]
+  milestones?: { title: string; description: string; deliverables: string[] }[]
+  domain?: string
+  difficulty?: string
+  tech_stack?: string[]
+}
+
 export interface ProjectChatRequest {
   project_id: string
   project_title: string
@@ -15,8 +36,11 @@ export interface ProjectChatRequest {
   client_mood: string
   messages: ChatMessage[]
   language: ChatLanguage
-  /** Current code from the IDE so the customer can reference it */
+  level?: number
   code_context?: string
+  /** When chatting with a specific generated persona (separate chat per persona) */
+  persona?: PersonaChatInfo
+  simulation_context?: SimulationContextForChat
 }
 
 export interface ProjectChatResponse {
@@ -38,16 +62,20 @@ export interface CodeReviewResponse {
 }
 
 export async function postProjectChat(body: ProjectChatRequest): Promise<ProjectChatResponse> {
-  const res = await fetch(`${API_BASE}/api/chat`, {
+  // Use same-origin API route to avoid CORS preflight (OPTIONS 400) when calling backend
+  const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
+  const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(err || `Chat failed: ${res.status}`)
+    const err =
+      (data && typeof data.error === "string" ? data.error : null) ||
+      `Chat failed: ${res.status}`
+    throw new Error(err)
   }
-  return res.json()
+  return data as ProjectChatResponse
 }
 
 export async function postCodeReview(body: CodeReviewRequest): Promise<CodeReviewResponse> {
@@ -106,14 +134,18 @@ export interface GenerateSimulationResponse {
 }
 
 export async function generateSimulation(body: GenerateSimulationRequest): Promise<GenerateSimulationResponse> {
-  const res = await fetch(`${API_BASE}/generate-simulation`, {
+  // Use same-origin API route so the browser never hits the backend directly (avoids CORS and "Failed to fetch")
+  const res = await fetch("/api/generate-simulation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
+  const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(err || `Simulation generation failed: ${res.status}`)
+    const err =
+      (data && typeof data.error === "string" ? data.error : null) ||
+      `Simulation generation failed: ${res.status}`
+    throw new Error(err)
   }
-  return res.json()
+  return data as GenerateSimulationResponse
 }

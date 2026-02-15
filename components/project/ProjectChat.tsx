@@ -6,39 +6,60 @@ import { Send, Bot, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { postProjectChat, type ChatMessage, type ChatLanguage } from "@/lib/api"
 import type { SimulationTask } from "@/lib/tasks"
+import type { SimulationPersona } from "@/lib/api"
 import { useProjectWorkspace } from "@/components/project/ProjectWorkspaceContext"
 import { cn } from "@/lib/utils"
-
-interface ProjectChatProps {
-  task: SimulationTask
-}
 
 const WELCOME_EN = "Hi! I'm your client for this project. Ask me anything about the requirements, the challenge, or what I expect. I'll answer as the stakeholder."
 const WELCOME_AR = "مرحباً! أنا عميلك في هذا المشروع. اسألني عن المتطلبات أو المهمة أو توقعاتي. سأجيبك بصفة صاحب المصلحة."
 
-export function ProjectChat({ task }: ProjectChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+interface ProjectChatProps {
+  task: SimulationTask
+  /** When set, this chat is for one specific persona (separate thread). */
+  personaId?: string
+  persona?: SimulationPersona | null
+  simulation?: { overview?: string; learning_objectives?: string[]; functional_requirements?: string[]; non_functional_requirements?: string[]; milestones?: { title: string; description: string; deliverables: string[] }[]; domain?: string; difficulty?: string; tech_stack?: string[] } | null
+  /** Controlled mode: parent owns messages and handles send. */
+  messages?: ChatMessage[]
+  onSendMessage?: (text: string, codeContext?: string) => Promise<void>
+}
+
+export function ProjectChat({ task, personaId, persona, simulation, messages: controlledMessages, onSendMessage }: ProjectChatProps) {
+  const [internalMessages, setInternalMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [language, setLanguage] = useState<ChatLanguage>("en")
   const scrollRef = useRef<HTMLDivElement>(null)
   const { code } = useProjectWorkspace()
 
+  const isControlled = Boolean(personaId && controlledMessages && onSendMessage)
+  const messages = isControlled ? controlledMessages : internalMessages
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages])
 
-  const welcome = language === "ar" ? WELCOME_AR : WELCOME_EN
+  const welcome = persona?.initial_message ?? (language === "ar" ? WELCOME_AR : WELCOME_EN)
 
   const handleSend = async () => {
     const text = input.trim()
     if (!text || loading) return
 
-    const userMsg: ChatMessage = { role: "user", content: text }
-    setMessages((prev) => [...prev, userMsg])
     setInput("")
-    setLoading(true)
 
+    if (isControlled && onSendMessage) {
+      setLoading(true)
+      try {
+        await onSendMessage(text, code ?? undefined)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    const userMsg: ChatMessage = { role: "user", content: text }
+    setInternalMessages((prev) => [...prev, userMsg])
+    setLoading(true)
     try {
       const res = await postProjectChat({
         project_id: task.id,
@@ -46,14 +67,15 @@ export function ProjectChat({ task }: ProjectChatProps) {
         project_description: task.description,
         client_persona: task.clientPersona,
         client_mood: task.clientMood,
-        messages: [...messages, userMsg],
+        messages: [...internalMessages, userMsg],
         language,
+        level: task.level ?? 1,
         code_context: code?.trim() || undefined,
       })
-      setMessages((prev) => [...prev, { role: "assistant", content: res.reply }])
+      setInternalMessages((prev) => [...prev, { role: "assistant", content: res.reply }])
     } catch (e) {
       const err = e instanceof Error ? e.message : "Something went wrong"
-      setMessages((prev) => [
+      setInternalMessages((prev) => [
         ...prev,
         { role: "assistant", content: `[Error: ${err}. Make sure the backend is running and GEMINI_API_KEY is set.]` },
       ])
@@ -70,7 +92,9 @@ export function ProjectChat({ task }: ProjectChatProps) {
     <div className="flex h-full flex-col">
       {/* Header: Customer (AI) + language toggle */}
       <div className="flex shrink-0 items-center justify-between border-b border-border bg-card/50 px-4 py-2.5">
-        <span className="text-sm font-semibold text-foreground">Customer (AI)</span>
+        <span className="text-sm font-semibold text-foreground">
+          {persona ? `${persona.name} (${persona.role})` : "Customer (AI)"}
+        </span>
         <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-0.5">
           <button
             type="button"

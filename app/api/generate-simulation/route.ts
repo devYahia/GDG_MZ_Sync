@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(JSON.parse(text))
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error"
+    const message = String(err instanceof Error ? err.message : err ?? "Unknown error")
     const isNetwork =
       message.includes("fetch") ||
       message.includes("ECONNREFUSED") ||

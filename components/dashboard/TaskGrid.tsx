@@ -14,16 +14,18 @@ export function TaskGrid() {
     const [searchQuery, setSearchQuery] = useState("")
 
     const filteredTasks = useMemo(() => {
+        const st = Array.isArray(selectedTracks) ? selectedTracks : []
+        const sl = Array.isArray(selectedLevels) ? selectedLevels : []
         return TASKS.filter((task) => {
-            if (selectedTracks.length > 0 && !selectedTracks.includes(task.field)) return false
-            if (selectedLevels.length > 0 && !selectedLevels.includes(task.level)) return false
+            if (st.length > 0 && !st.includes(task.field)) return false
+            if (sl.length > 0 && !sl.includes(task.level)) return false
             if (searchQuery) {
                 const q = searchQuery.toLowerCase()
                 return (
-                    task.title.toLowerCase().includes(q) ||
-                    task.description.toLowerCase().includes(q) ||
-                    task.clientPersona.toLowerCase().includes(q) ||
-                    task.tools.some((t) => t.toLowerCase().includes(q))
+                    (task.title && task.title.toLowerCase().includes(q)) ||
+                    (task.description && task.description.toLowerCase().includes(q)) ||
+                    (task.clientPersona && task.clientPersona.toLowerCase().includes(q)) ||
+                    (Array.isArray(task.tools) && task.tools.some((t) => String(t).toLowerCase().includes(q)))
                 )
             }
             return true

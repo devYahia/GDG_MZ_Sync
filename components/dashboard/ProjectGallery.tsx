@@ -21,9 +21,10 @@ const TABS: { id: string; label: string; field?: TaskField }[] = [
     { id: "design", label: "Design", field: "design" },
 ]
 
-function toggleInArray<T>(arr: T[], item: T): T[] {
-    if (arr.includes(item)) return arr.filter((x) => x !== item)
-    return [...arr, item]
+function toggleInArray<T>(arr: T[] | undefined, item: T): T[] {
+    const a = Array.isArray(arr) ? arr : []
+    if (a.includes(item)) return a.filter((x) => x !== item)
+    return [...a, item]
 }
 
 export function ProjectGallery() {
@@ -52,10 +53,10 @@ export function ProjectGallery() {
             const q = searchQuery.toLowerCase()
             tasks = tasks.filter(
                 (t) =>
-                    t.title.toLowerCase().includes(q) ||
-                    t.description.toLowerCase().includes(q) ||
-                    t.clientPersona.toLowerCase().includes(q) ||
-                    t.tools.some((tool) => tool.toLowerCase().includes(q))
+                    (t.title && t.title.toLowerCase().includes(q)) ||
+                    (t.description && t.description.toLowerCase().includes(q)) ||
+                    (t.clientPersona && t.clientPersona.toLowerCase().includes(q)) ||
+                    (Array.isArray(t.tools) && t.tools.some((tool) => String(tool).toLowerCase().includes(q)))
             )
         }
 
@@ -215,13 +216,13 @@ export function ProjectGallery() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Levels</p>
                 <div className="flex flex-wrap gap-2">
                     {LEVEL_CONFIG.map((lvl) => {
-                        const isSelected = selectedLevels.includes(lvl.levelNumber)
-                        const showActive = selectedLevels.length === 0 || isSelected
+                        const isSelected = selectedLevel === lvl.levelNumber
+                        const showActive = selectedLevel === "all" || isSelected
                         return (
                             <button
                                 key={lvl.levelNumber}
                                 type="button"
-                                onClick={() => setSelectedLevels(toggleInArray(selectedLevels, lvl.levelNumber))}
+                                onClick={() => setSelectedLevel(isSelected ? "all" : lvl.levelNumber)}
                                 className={cn(
                                     "rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 hover:scale-[1.02]",
                                     showActive
@@ -230,7 +231,7 @@ export function ProjectGallery() {
                                 )}
                             >
                                 L{lvl.levelNumber}
-                                {isSelected && selectedLevels.length > 0 && " ✓"}
+                                {isSelected && " ✓"}
                             </button>
                         )
                     })}

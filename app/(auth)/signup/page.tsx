@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import {
 
@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { signup, verifyEmailOtp, resendEmailOtp, completeOnboarding } from "../actions"
+import { signup, completeOnboarding } from "../actions"
 
 const FIELDS = [
     { value: "frontend", label: "Frontend", icon: Code, color: "text-blue-400" },
@@ -80,7 +80,7 @@ const REGIONS = [
     "Middle East",
 ]
 
-type Step = 1 | 1.5 | 2 | 3 | 4
+type Step = 1 | 2 | 3 | 4
 
 export default function SignupPage() {
     const [step, setStep] = useState<Step>(1)
@@ -92,10 +92,6 @@ export default function SignupPage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [region, setRegion] = useState("")
-
-    // Step 1.5 data (OTP verification)
-    const [otpCode, setOtpCode] = useState("")
-    const [resendCountdown, setResendCountdown] = useState(0)
 
     // Step 2-4 data
     const [field, setField] = useState("")
@@ -129,60 +125,10 @@ export default function SignupPage() {
 
             if (result?.success) {
                 toast.success(result.success)
-                setStep(1.5)
-                setResendCountdown(60)
-            }
-        })
-    }
-
-    function handleStep1_5() {
-        if (otpCode.length !== 6) {
-            toast.error("Please enter the 6-digit code")
-            return
-        }
-
-        startTransition(async () => {
-            const result = await verifyEmailOtp({
-                email,
-                token: otpCode,
-                fullName,
-                region,
-            })
-
-            if (result?.error) {
-                toast.error(result.error)
-                return
-            }
-
-            if (result?.success) {
-                toast.success(result.success)
                 setStep(2)
             }
         })
     }
-
-    async function handleResendCode() {
-        if (resendCountdown > 0) return
-
-        const result = await resendEmailOtp(email)
-        if (result?.error) {
-            toast.error(result.error)
-        } else if (result?.success) {
-            toast.success(result.success)
-            setResendCountdown(60)
-        }
-    }
-
-    // Countdown timer for resend
-    useEffect(() => {
-        if (resendCountdown > 0) {
-            const timer = setInterval(() => {
-                setResendCountdown((prev) => Math.max(0, prev - 1))
-            }, 1000)
-            return () => clearInterval(timer)
-        }
-    }, [resendCountdown])
-
 
     function handleStep2() {
         if (!field) {
@@ -252,7 +198,7 @@ export default function SignupPage() {
 
                 {/* Progress Bar */}
                 <div className="mb-6 flex items-center gap-2">
-                    {[1, 1.5, 2, 3, 4].map((s) => (
+                    {[1, 2, 3, 4].map((s) => (
                         <div
                             key={s}
                             className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= step
@@ -263,7 +209,7 @@ export default function SignupPage() {
                     ))}
                 </div>
                 <p className="mb-4 text-center text-xs text-white/40">
-                    Step {step === 1.5 ? 2 : step > 1.5 ? step + 1 : step} of 5
+                    Step {step} of 4
                 </p>
 
                 <div className="glass-card rounded-2xl p-8 shadow-2xl">
@@ -366,7 +312,7 @@ export default function SignupPage() {
                                     {isPending ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Sending code...
+                                            Creating account...
                                         </>
                                     ) : (
                                         <>
@@ -384,78 +330,6 @@ export default function SignupPage() {
                                         Sign in
                                     </Link>
                                 </p>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Step 1.5: Email Verification */}
-                    {step === 1.5 && (
-                        <>
-                            <div className="text-center mb-6">
-                                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400">
-                                    Verify your email
-                                </h1>
-                                <p className="text-white/50 text-sm mt-2">
-                                    We sent a 6-digit code to {email}
-                                </p>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="otpCode" className="text-white/70">Verification Code</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
-                                        <Input
-                                            id="otpCode"
-                                            value={otpCode}
-                                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                            placeholder="Enter 6-digit code"
-                                            disabled={isPending}
-                                            className="pl-10 text-center text-2xl tracking-widest bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500/50 focus:ring-purple-500/20"
-                                            maxLength={6}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-white/40 text-center">
-                                        {resendCountdown > 0 ? (
-                                            <>Resend code in {resendCountdown}s</>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={handleResendCode}
-                                                className="text-purple-400 hover:underline hover:text-purple-300"
-                                            >
-                                                Resend code
-                                            </button>
-                                        )}
-                                    </p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <Button
-                                        variant="outline"
-                                        className="flex-1 border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white"
-                                        onClick={() => setStep(1)}
-                                        disabled={isPending}
-                                    >
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Back
-                                    </Button>
-                                    <Button
-                                        className="flex-1 bg-gradient-to-r from-[#4e1e40] to-black border border-white/10 text-white"
-                                        onClick={handleStep1_5}
-                                        disabled={isPending || otpCode.length !== 6}
-                                    >
-                                        {isPending ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Verifying...
-                                            </>
-                                        ) : (
-                                            <>
-                                                Verify
-                                                <Check className="ml-2 h-4 w-4" />
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
                             </div>
                         </>
                     )}

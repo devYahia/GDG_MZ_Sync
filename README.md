@@ -1,6 +1,10 @@
 # Interna. Virtual
 
-AI-Driven Virtual Internship Simulator -- GDG Hackathon 2026
+> **Built for GDG Delta Hackathon 2026** 🚀
+
+AI-Driven Virtual Internship Simulator
+
+---
 
 ## Tech Stack
 

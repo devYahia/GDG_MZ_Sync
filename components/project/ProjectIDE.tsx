@@ -127,7 +127,8 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
 
   const handleAddFile = useCallback(() => {
     const base = "src"
-    const existing = Object.keys(files).filter((p) => p.startsWith(`${base}/`))
+    const fileMap = files ?? {}
+    const existing = Object.keys(fileMap).filter((p) => String(p).startsWith(`${base}/`))
     let name = "script.js"
     let i = 0
     while (existing.some((p) => p === `${base}/${name}`)) {

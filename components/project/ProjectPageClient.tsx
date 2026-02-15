@@ -176,13 +176,13 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                 ) : (
                     <ProjectChat
                         task={task}
-                        personaId={activeId.startsWith("persona-") ? activeId : undefined}
-                        persona={activeId.startsWith("persona-") && simulation
+                        personaId={activeId && activeId.startsWith("persona-") ? activeId : undefined}
+                        persona={activeId && activeId.startsWith("persona-") && simulation
                             ? simulation.personas[parseInt(activeId.replace("persona-", ""), 10)]
                             : undefined}
                         simulation={simulation ?? undefined}
-                        messages={activeId.startsWith("persona-") ? (messagesByPersona[activeId] ?? []) : undefined}
-                        onSendMessage={activeId.startsWith("persona-") && simulation
+                        messages={activeId && activeId.startsWith("persona-") ? (messagesByPersona[activeId] ?? []) : undefined}
+                        onSendMessage={activeId && activeId.startsWith("persona-") && simulation
                             ? async (text, codeContext) => {
                                 const userMsg: ChatMessage = { role: "user", content: text }
                                 const thread = messagesByPersona[activeId] ?? []

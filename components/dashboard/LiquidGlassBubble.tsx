@@ -93,12 +93,15 @@ export function LiquidGlassBubble({ userName, showOnboarding, onComplete }: Liqu
     }
 
     const toggleInterest = (interest: string) => {
-        setData(prev => ({
-            ...prev,
-            interests: prev.interests.includes(interest)
-                ? prev.interests.filter(i => i !== interest)
-                : [...prev.interests, interest]
-        }))
+        setData(prev => {
+            const interests = Array.isArray(prev.interests) ? prev.interests : []
+            return {
+                ...prev,
+                interests: interests.includes(interest)
+                    ? interests.filter(i => i !== interest)
+                    : [...interests, interest]
+            }
+        })
     }
 
     if (!showOnboarding && !isOpen) return null
@@ -309,12 +312,12 @@ export function LiquidGlassBubble({ userName, showOnboarding, onComplete }: Liqu
                                                 onClick={() => toggleInterest(interest)}
                                                 className={cn(
                                                     "rounded-full border px-4 py-2 text-xs font-medium transition-all duration-300",
-                                                    data.interests.includes(interest)
+                                                    (data.interests ?? []).includes(interest)
                                                         ? "border-pink-500/50 bg-pink-500/20 text-pink-100 shadow-[0_0_15px_rgba(236,72,153,0.25)]"
                                                         : "border-white/5 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
                                                 )}
                                             >
-                                                {data.interests.includes(interest) && (
+                                                {(data.interests ?? []).includes(interest) && (
                                                     <motion.span
                                                         initial={{ scale: 0 }}
                                                         animate={{ scale: 1 }}

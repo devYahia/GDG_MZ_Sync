@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/server"
 import { getTaskById } from "@/lib/tasks"
-import { ProjectView } from "@/components/project/ProjectView"
+import { ProjectPageClient } from "@/components/project/ProjectPageClient"
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>
@@ -35,12 +35,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           {task.title}
         </div>
         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/60">
-          Level {task.level}
+          Level L{task.level}
         </span>
       </header>
 
-      {/* Split: Chat (left) | IDE (right) */}
-      <ProjectView task={task} />
+      {/* Main content — calls API, shows loading, then 3-pane view */}
+      <ProjectPageClient task={task} />
     </div>
   )
 }

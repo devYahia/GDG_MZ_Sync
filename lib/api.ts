@@ -60,3 +60,58 @@ export async function postCodeReview(body: CodeReviewRequest): Promise<CodeRevie
   }
   return res.json()
 }
+
+// ── Simulation Generation ──────────────────────────────────
+
+export interface SimulationMilestone {
+  title: string
+  description: string
+  deliverables: string[]
+}
+
+export interface SimulationPersona {
+  name: string
+  role: string
+  personality: string
+  system_prompt: string
+  initial_message: string
+}
+
+export interface SimulationData {
+  title: string
+  domain: string
+  difficulty: string
+  estimated_duration: string
+  tech_stack: string[]
+  overview: string
+  learning_objectives: string[]
+  functional_requirements: string[]
+  non_functional_requirements: string[]
+  milestones: SimulationMilestone[]
+  personas: SimulationPersona[]
+}
+
+export interface GenerateSimulationRequest {
+  title: string
+  context: string
+  level: string // e.g. "L3"
+}
+
+export interface GenerateSimulationResponse {
+  simulation_id: string
+  title: string
+  simulation_data: SimulationData
+}
+
+export async function generateSimulation(body: GenerateSimulationRequest): Promise<GenerateSimulationResponse> {
+  const res = await fetch(`${API_BASE}/generate-simulation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(err || `Simulation generation failed: ${res.status}`)
+  }
+  return res.json()
+}

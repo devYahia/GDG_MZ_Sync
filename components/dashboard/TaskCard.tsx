@@ -113,7 +113,7 @@ export function TaskCard({ task }: TaskCardProps) {
                             className="h-8 gap-1 rounded-xl text-xs transition-all duration-300"
                             asChild
                         >
-                            <Link href={`/dashboard/project/${task.id}`} className="gap-1">
+                            <Link href={`/project/${task.id}`} className="gap-1">
                                 Start
                                 <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                             </Link>

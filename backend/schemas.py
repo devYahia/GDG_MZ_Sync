@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 class Milestone(BaseModel):
     title: str
@@ -29,10 +29,32 @@ class SimulationOutput(BaseModel):
 class GenerateSimulationRequest(BaseModel):
     title: str
     context: str
-    level: str  # e.g. "Beginner", "Intermediate", "Advanced"
-    level_description: str  # e.g. "I know basic Python and HTML"
+    level: str  # e.g. "L0", "L5", "L10"
 
 class GenerateSimulationResponse(BaseModel):
     simulation_id: str
     title: str
     simulation_data: SimulationOutput
+
+# --- Chat & Review Models ---
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    
+class ProjectChatRequest(BaseModel):
+    project_id: str
+    project_title: str
+    project_description: str
+    client_persona: str
+    client_mood: str
+    messages: List[ChatMessage]
+    language: Literal["en", "ar"]
+
+class CodeReviewRequest(BaseModel):
+    project_id: str
+    project_title: str
+    project_description: str
+    code: str
+    language: str
+    language_hint: Optional[Literal["en", "ar"]] = None

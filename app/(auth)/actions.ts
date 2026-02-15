@@ -95,23 +95,18 @@ export async function signup(data: {
 
     const supabase = await createClient()
 
-    // First, check if user already exists
-    const { data: existingUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id || "")
-        .single()
-
-    if (existingUser) {
-        return { error: "User already exists" }
+    // Check if user already exists
+    const { data: existingUser } = await supabase.auth.getUser()
+    if (existingUser?.user) {
+        return { error: "You are already logged in. Please sign out first." }
     }
 
-    // Use signInWithOtp to send verification email
-    // This will send an email with a 6-digit OTP code
-    const { error } = await supabase.auth.signInWithOtp({
+    // Create user account directly with password
+    const { data: authData, error: authError } = await supabase.auth.signUp({
         email: validated.data.email,
+        password: validated.data.password,
         options: {
-            shouldCreateUser: true,
+            emailRedirectTo: undefined,
             data: {
                 full_name: validated.data.fullName,
                 region: validated.data.region,
@@ -119,77 +114,52 @@ export async function signup(data: {
         },
     })
 
-    if (error) {
-        return { error: error.message }
+    if (authError) {
+        return { error: authError.message }
     }
 
-    return {
-        success:
-            "Verification code sent! Please check your email for a 6-digit code.",
-    }
-}
-
-export async function verifyEmailOtp(data: {
-    email: string
-    token: string
-    fullName: string
-    region: string
-}): Promise<AuthResult> {
-    const supabase = await createClient()
-
-    // Verify the OTP
-    const {
-        data: { session },
-        error,
-    } = await supabase.auth.verifyOtp({
-        email: data.email,
-        token: data.token,
-        type: "email",
-    })
-
-    if (error) {
-        return { error: error.message }
+    if (!authData.user) {
+        return { error: "Failed to create account. Please try again." }
     }
 
-    if (!session?.user) {
-        return { error: "Verification failed. Please try again." }
+    // Check if this user already has a profile
+    const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id, onboarding_completed")
+        .eq("id", authData.user.id)
+        .single()
+
+    if (existingProfile) {
+        // Profile already exists - check if onboarding is complete
+        if (existingProfile.onboarding_completed) {
+            return { error: "Account already exists. Please sign in instead." }
+        }
+        // Profile exists but onboarding incomplete - let them continue
+        return { success: "Account created successfully!" }
     }
 
-    // Create profile after successful verification
-    const { error: profileError } = await supabase.from("profiles").insert({
-        id: session.user.id,
-        full_name: data.fullName,
-        region: data.region,
+    // Create profile for new user using upsert
+    const { error: profileError } = await supabase.from("profiles").upsert({
+        id: authData.user.id,
+        full_name: validated.data.fullName,
+        region: validated.data.region,
         field: "frontend", // placeholder, updated in onboarding
         experience_level: "student", // placeholder
         interests: [],
         onboarding_completed: false,
+    }, {
+        onConflict: "id"
     })
 
     if (profileError) {
-        // If profile creation fails, we should still let them continue
-        // They can complete profile later
         console.error("Profile creation error:", profileError)
+        return { error: "Account created but profile setup failed. Please contact support." }
     }
 
-    return { success: "Email verified! Completing your profile..." }
-}
+    // Revalidate to ensure session is picked up
+    revalidatePath("/", "layout")
 
-export async function resendEmailOtp(email: string): Promise<AuthResult> {
-    const supabase = await createClient()
-
-    const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-            shouldCreateUser: false,
-        },
-    })
-
-    if (error) {
-        return { error: error.message }
-    }
-
-    return { success: "Verification code resent! Check your email." }
+    return { success: "Account created successfully!" }
 }
 
 

@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { FIELD_CONFIG } from "@/lib/tasks"
 import { DashboardClient } from "@/components/dashboard/DashboardClient"
+import { DashboardWithOnboarding } from "@/components/dashboard/DashboardWithOnboarding"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -16,7 +15,20 @@ export default async function DashboardPage() {
         .eq("id", user.id)
         .single()
 
-    if (!profile || !profile.onboarding_completed) redirect("/signup")
+    if (!profile) redirect("/signup")
+
+    // Show bubble for users who haven't completed onboarding
+    const needsOnboarding = !profile.onboarding_completed
+
+    if (needsOnboarding) {
+        return (
+            <DashboardWithOnboarding
+                userName={profile.full_name}
+                fieldKey={profile.field || "frontend"}
+                experienceLevel={profile.experience_level || "student"}
+            />
+        )
+    }
 
     return (
         <DashboardClient

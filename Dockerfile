@@ -3,9 +3,9 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Install dependencies (npm install for Coolify: tolerates lock file drift / cross-OS)
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder

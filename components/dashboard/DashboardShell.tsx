@@ -5,6 +5,7 @@ import { motion } from "motion/react"
 import { AppSidebar } from "@/components/dashboard/AppSidebar"
 import { AppNavbar } from "@/components/dashboard/AppNavbar"
 import { SidebarProvider, useSidebar } from "@/components/dashboard/SidebarContext"
+import { LiquidGlassBubble } from "@/components/dashboard/LiquidGlassBubble"
 
 function DashboardShellInner({
   children,
@@ -43,14 +44,20 @@ interface DashboardShellProps {
   children: React.ReactNode
   userName: string
   userEmail: string
+  showOnboarding?: boolean
 }
 
-export function DashboardShell({ children, userName, userEmail }: DashboardShellProps) {
+
+export function DashboardShell({ children, userName, userEmail, showOnboarding = false }: DashboardShellProps) {
   return (
     <SidebarProvider>
       <DashboardShellInner userName={userName} userEmail={userEmail}>
         {children}
       </DashboardShellInner>
+      <LiquidGlassBubble
+        userName={userName}
+        showOnboarding={showOnboarding}
+      />
     </SidebarProvider>
   )
 }

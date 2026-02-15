@@ -18,11 +18,9 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
-  if (!profile || !profile.onboarding_completed) redirect("/signup")
-
   return (
     <DashboardShell
-      userName={profile.full_name}
+      userName={profile?.full_name ?? user.email ?? "Developer"}
       userEmail={user.email ?? ""}
     >
       {children}

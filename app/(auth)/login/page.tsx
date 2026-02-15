@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { login, signInWithGoogle } from "../actions"
+import { login } from "../actions"
 
 export default function LoginPage() {
     const [isPending, startTransition] = useTransition()
@@ -104,6 +104,8 @@ export default function LoginPage() {
                         </Button>
                     </form>
 
+                    {/* Google OAuth - Postponed for demo, can be activated later */}
+                    {/* 
                     <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t border-white/10" />
@@ -132,6 +134,7 @@ export default function LoginPage() {
                         </svg>
                         Google
                     </Button>
+                    */}
 
                     <p className="mt-6 text-center text-xs text-white/40">
                         Don&apos;t have an account?{" "}

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { signup, signInWithGoogle } from "../actions"
+import { signup } from "../actions"
 
 const REGIONS = [
     "North America",
@@ -241,6 +241,8 @@ export default function SignupPage() {
                                     )}
                                 </Button>
 
+                                {/* Google OAuth - Postponed for demo, can be activated later */}
+                                {/* 
                                 <div className="relative my-6">
                                     <div className="absolute inset-0 flex items-center">
                                         <span className="w-full border-t border-white/10" />
@@ -269,6 +271,7 @@ export default function SignupPage() {
                                     </svg>
                                     Google
                                 </Button>
+                                */}
 
                                 <p className="text-center text-xs text-white/40">
                                     Already have an account?{" "}

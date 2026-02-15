@@ -5,30 +5,23 @@ import { Search } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 
-import { FIELD_CONFIG, LEVEL_CONFIG, type TaskField, type TaskDifficulty } from "@/lib/tasks"
+import { FIELD_CONFIG, LEVEL_CONFIG, type TaskField } from "@/lib/tasks"
 
 export type MultiSelectFilters = {
     tracks: TaskField[]
-    difficulties: TaskDifficulty[]
     levels: number[]
 }
 
 interface TaskFiltersProps {
     selectedTracks: TaskField[]
-    selectedDifficulties: TaskDifficulty[]
     selectedLevels: number[]
     searchQuery: string
     onTracksChange: (tracks: TaskField[]) => void
-    onDifficultiesChange: (difficulties: TaskDifficulty[]) => void
     onLevelsChange: (levels: number[]) => void
     onSearchChange: (query: string) => void
 }
 
-const DIFFICULTY_OPTIONS: { value: TaskDifficulty; label: string }[] = [
-    { value: "easy", label: "Easy" },
-    { value: "medium", label: "Medium" },
-    { value: "hard", label: "Hard" },
-]
+
 
 function toggleInArray<T>(arr: T[] | undefined, item: T): T[] {
     const a = Array.isArray(arr) ? arr : []
@@ -37,17 +30,14 @@ function toggleInArray<T>(arr: T[] | undefined, item: T): T[] {
 }
 
 export function TaskFilters({
-    selectedTracks = [],
-    selectedDifficulties = [],
-    selectedLevels = [],
-    searchQuery = "",
+    selectedTracks,
+    selectedLevels,
+    searchQuery,
     onTracksChange,
-    onDifficultiesChange,
     onLevelsChange,
     onSearchChange,
 }: TaskFiltersProps) {
     const st = Array.isArray(selectedTracks) ? selectedTracks : []
-    const sd = Array.isArray(selectedDifficulties) ? selectedDifficulties : []
     const sl = Array.isArray(selectedLevels) ? selectedLevels : []
     return (
         <motion.div
@@ -105,30 +95,6 @@ export function TaskFilters({
                 </div>
             </div>
 
-            {/* Difficulty (multi-select) */}
-            <div>
-                <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project difficulty</p>
-                <div className="flex flex-wrap gap-2">
-                    {DIFFICULTY_OPTIONS.map((opt) => {
-                        const isExplicitlySelected = sd.includes(opt.value)
-                        const showActive = sd.length === 0 ? true : isExplicitlySelected
-                        return (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => onDifficultiesChange(toggleInArray(sd, opt.value))}
-                                className={`rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 hover:scale-[1.02] ${showActive
-                                    ? "border-primary bg-primary/15 text-primary shadow-sm"
-                                    : "border-border bg-muted/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                                    }`}
-                            >
-                                {opt.label}
-                                {isExplicitlySelected && sd.length > 0 && " ✓"}
-                            </button>
-                        )
-                    })}
-                </div>
-            </div>
 
             {/* Levels (multi-select) */}
             <div>

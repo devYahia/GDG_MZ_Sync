@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Bell, LogOut, ChevronDown, User } from "lucide-react"
+import { LogOut, ChevronDown, User, Sun, Moon } from "lucide-react"
+import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -16,6 +17,11 @@ interface AppNavbarProps {
 
 export function AppNavbar({ userName, userEmail }: AppNavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const { setTheme, theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid hydration mismatch
+  useState(() => { setMounted(true) })
 
   const initials = userName
     .split(" ")
@@ -29,15 +35,17 @@ export function AppNavbar({ userName, userEmail }: AppNavbarProps) {
       {/* Spacer (search removed — ProjectGallery has its own) */}
       <div className="flex-1" />
 
-      {/* Right: Notifications + User */}
+      {/* Right: Theme Toggle + User */}
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground"
+          className="relative h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground overflow-hidden"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 absolute" />
+          <Moon className="h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
+          <span className="sr-only">Toggle theme</span>
         </Button>
 
         <div className="relative">

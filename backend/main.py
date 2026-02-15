@@ -1,14 +1,13 @@
 import os
 import uuid
-from typing import Literal
+from typing import Literal, List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel  # <--- CRITICAL FIX
+from pydantic import BaseModel
 from supabase import create_client, Client
-import google.generativeai as genai # <--- Ensure this is imported for the genai.configure call
 
-# ... rest of your imports (schemas, llm_service, etc.)
+# Application internal imports
 from schemas import (
     GenerateSimulationRequest, 
     GenerateSimulationResponse, 
@@ -21,7 +20,6 @@ from llm_service import (
     generate_chat_response, 
     generate_code_review
 )
-import uuid
 
 # Load environment: backend/.env first, then project root .env.local and .env
 from pathlib import Path as _Path
@@ -57,10 +55,7 @@ if url and key:
 else:
     print("Warning: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found.")
 
-# Gemini
-gemini_api_key = os.environ.get("GEMINI_API_KEY")
-if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
+# Gemini API key is used by llm_service.py via GEMINI_API_KEY env var
 
 
 # --- System prompts (chat uses llm_service; review prompt below) ---

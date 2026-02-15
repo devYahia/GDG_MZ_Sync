@@ -1,4 +1,3 @@
-# Script to run both the front and back end with 1 click
 import subprocess
 import time
 import sys

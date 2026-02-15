@@ -103,10 +103,13 @@
   }
 
   @keyframes gradient-x {
-    0%, 100% {
+
+    0%,
+    100% {
       background-size: 200% 100%;
       background-position: 0% 50%;
     }
+
     50% {
       background-size: 200% 100%;
       background-position: 100% 50%;
@@ -198,14 +201,14 @@ div[class*="unicorn"],
   opacity: 0 !important;
   pointer-events: none !important;
   visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  position: absolute !important;
-  clip: rect(0 0 0 0) !important;
 }
 
-/* Also target any badge overlay inside scenes by position */
-[id^="unicorn-"] > :not(canvas):not(div[style*="inset: 0"]) {
+/* Hide Unicorn Studio Watermark */
+a[href*="unicorn.studio"],
+.us-branding,
+.unicorn-studio-branding {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

@@ -7,9 +7,12 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from schemas import SimulationOutput, ProjectChatRequest, CodeReviewRequest
 from constants import get_level_description
 
-# Load environment
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
+# Load environment: backend/.env first, then project root .env.local and .env (so root .env.local works for both Next.js and backend)
+_backend_dir = Path(__file__).resolve().parent
+_root = _backend_dir.parent
+load_dotenv(dotenv_path=_backend_dir / ".env")
+load_dotenv(dotenv_path=_root / ".env.local")
+load_dotenv(dotenv_path=_root / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 

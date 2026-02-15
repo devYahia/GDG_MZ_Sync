@@ -10,7 +10,14 @@ import type { SimulationTask } from "@/lib/tasks"
 import { useProjectWorkspace } from "@/components/project/ProjectWorkspaceContext"
 import { ProjectIDEToolbar } from "./ProjectIDEToolbar"
 
-const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false })
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-white/50 text-sm">
+      Loading editor…
+    </div>
+  ),
+})
 
 interface ProjectIDEProps {
   task: SimulationTask

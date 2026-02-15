@@ -1,9 +1,14 @@
+import os
+import uuid
+from typing import Literal
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel  # <--- CRITICAL FIX
 from supabase import create_client, Client
-import os
-from dotenv import load_dotenv
+import google.generativeai as genai # <--- Ensure this is imported for the genai.configure call
 
+# ... rest of your imports (schemas, llm_service, etc.)
 from schemas import (
     GenerateSimulationRequest, 
     GenerateSimulationResponse, 
@@ -18,8 +23,13 @@ from llm_service import (
 )
 import uuid
 
-# Load environment variables
-load_dotenv()
+# Load environment: backend/.env first, then project root .env.local and .env
+from pathlib import Path as _Path
+_backend_dir = _Path(__file__).resolve().parent
+_root = _backend_dir.parent
+load_dotenv(dotenv_path=_backend_dir / ".env")
+load_dotenv(dotenv_path=_root / ".env.local")
+load_dotenv(dotenv_path=_root / ".env")
 
 app = FastAPI()
 

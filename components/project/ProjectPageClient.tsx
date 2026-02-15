@@ -7,7 +7,9 @@ import { generateSimulation, type SimulationData } from "@/lib/api"
 import { ProjectSidebar, type SidebarItem } from "./ProjectSidebar"
 import { ProjectDescription } from "./ProjectDescription"
 import { ProjectChat } from "./ProjectChat"
-import { IDEPlaceholder } from "./IDEPlaceholder"
+import { ProjectWorkspaceProvider } from "./ProjectWorkspaceContext"
+import { ProjectIDE } from "./ProjectIDE"
+import { ProjectPresence } from "./ProjectPresence"
 
 interface ProjectPageClientProps {
     task: SimulationTask
@@ -173,9 +175,12 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                 )}
             </div>
 
-            {/* Right: IDE Placeholder */}
+            {/* Right: VS Code-style sandbox (Monaco editor + AI review + Push to GitHub) */}
             <div className="flex w-[40%] min-w-0 flex-col">
-                <IDEPlaceholder />
+                <ProjectPresence projectId={task.id} />
+                <ProjectWorkspaceProvider initialCode="// Implement your solution here.\n// Push to GitHub from the toolbar when ready.\n">
+                    <ProjectIDE task={task} />
+                </ProjectWorkspaceProvider>
             </div>
         </div>
     )

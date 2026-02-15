@@ -106,14 +106,18 @@ export interface GenerateSimulationResponse {
 }
 
 export async function generateSimulation(body: GenerateSimulationRequest): Promise<GenerateSimulationResponse> {
-  const res = await fetch(`${API_BASE}/generate-simulation`, {
+  // Use same-origin API route so the browser never hits the backend directly (avoids CORS and "Failed to fetch")
+  const res = await fetch("/api/generate-simulation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
+  const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(err || `Simulation generation failed: ${res.status}`)
+    const err =
+      (data && typeof data.error === "string" ? data.error : null) ||
+      `Simulation generation failed: ${res.status}`
+    throw new Error(err)
   }
-  return res.json()
+  return data as GenerateSimulationResponse
 }

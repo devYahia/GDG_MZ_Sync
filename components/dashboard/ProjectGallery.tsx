@@ -80,8 +80,8 @@ export function ProjectGallery() {
                         className={cn(
                             "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
                             showLevelFilter || selectedLevel !== "all"
-                                ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
-                                : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                ? "border-purple-500/40 bg-purple-500/10 text-purple-400 dark:text-purple-300"
+                                : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:text-foreground/70"
                         )}
                     >
                         <Filter className="h-3.5 w-3.5" />
@@ -92,8 +92,8 @@ export function ProjectGallery() {
                         className={cn(
                             "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
                             showSearch
-                                ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
-                                : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                ? "border-purple-500/40 bg-purple-500/10 text-purple-400 dark:text-purple-300"
+                                : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:text-foreground/70"
                         )}
                     >
                         <Search className="h-3.5 w-3.5" />
@@ -113,14 +113,14 @@ export function ProjectGallery() {
                         className="overflow-hidden"
                     >
                         <div className="flex flex-wrap items-center gap-2 py-2">
-                            <span className="text-xs text-white/40 mr-1">Level:</span>
+                            <span className="text-xs text-muted-foreground/70 mr-1">Level:</span>
                             <button
                                 onClick={() => setSelectedLevel("all")}
                                 className={cn(
                                     "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
                                     selectedLevel === "all"
-                                        ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
-                                        : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                        ? "border-purple-500/50 bg-purple-500/20 text-purple-400 dark:text-purple-300"
+                                        : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:text-foreground/70"
                                 )}
                             >
                                 All
@@ -132,8 +132,8 @@ export function ProjectGallery() {
                                     className={cn(
                                         "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
                                         selectedLevel === level
-                                            ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
-                                            : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
+                                            ? "border-purple-500/50 bg-purple-500/20 text-purple-400 dark:text-purple-300"
+                                            : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:text-foreground/70"
                                     )}
                                 >
                                     L{level}

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
 import { Play, Loader2, CheckCircle, XCircle, Terminal, FileCode, ChevronUp, ChevronDown } from "lucide-react"
+import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 import { postCodeReview, type ChatLanguage } from "@/lib/api"
@@ -14,7 +15,7 @@ import { IDEFileTree } from "./IDEFileTree"
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-white/50 text-sm">
+    <div className="flex h-full items-center justify-center bg-card text-muted-foreground text-sm">
       Loading editor…
     </div>
   ),
@@ -47,6 +48,7 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
   const [runLoading, setRunLoading] = useState(false)
   const [outputOpen, setOutputOpen] = useState(true)
   const outputRef = useRef<HTMLPreElement>(null)
+  const { resolvedTheme } = useTheme()
 
   const handleReview = useCallback(async () => {
     setReviewLoading(true)
@@ -206,7 +208,7 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
               defaultLanguage="javascript"
               value={files[activeFileId] ?? ""}
               onChange={(v) => setFileContent(activeFileId, v ?? "")}
-              theme="vs-dark"
+              theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
               options={{
                 minimap: { enabled: true },
                 fontSize: 13,
@@ -219,10 +221,10 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
       </div>
 
       {/* Bottom: Output / Terminal panel */}
-      <div className="shrink-0 border-t border-border bg-[#1e1e1e]">
+      <div className="shrink-0 border-t border-border bg-card">
         <button
           type="button"
-          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/5 border-b border-white/10"
+          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted border-b border-border"
           onClick={() => setOutputOpen((o) => !o)}
         >
           <span className="flex items-center gap-2">
@@ -234,7 +236,7 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
         {outputOpen && (
           <pre
             ref={outputRef}
-            className="p-4 text-xs text-green-400 font-mono overflow-auto max-h-40 min-h-20 whitespace-pre-wrap"
+            className="p-4 text-xs text-emerald-600 dark:text-emerald-400 font-mono overflow-auto max-h-40 min-h-20 whitespace-pre-wrap"
           >
             {output || "Run your code to see output here."}
           </pre>
@@ -244,11 +246,10 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
       {/* Review feedback panel (unchanged) */}
       {feedback !== null && (
         <div
-          className={`shrink-0 border-t p-4 max-h-48 overflow-y-auto ${
-            approved === true
+          className={`shrink-0 border-t p-4 max-h-48 overflow-y-auto ${approved === true
               ? "border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/15"
               : "border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15"
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2 mb-2">
             {approved === true ? (

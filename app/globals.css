@@ -102,10 +102,13 @@
   }
 
   @keyframes gradient-x {
-    0%, 100% {
+
+    0%,
+    100% {
       background-size: 200% 100%;
       background-position: 0% 50%;
     }
+
     50% {
       background-size: 200% 100%;
       background-position: 100% 50%;
@@ -191,4 +194,14 @@ a[href*="unicorn.studio"] {
   opacity: 0 !important;
   pointer-events: none !important;
   visibility: hidden !important;
+}
+
+/* Hide Unicorn Studio Watermark */
+a[href*="unicorn.studio"],
+.us-branding,
+.unicorn-studio-branding {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

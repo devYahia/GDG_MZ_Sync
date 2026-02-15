@@ -60,8 +60,8 @@ export function DashboardClient({ userName, fieldKey, experienceLevel }: Dashboa
         <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30">
             {/* Background Effects */}
             <div className="pointer-events-none fixed inset-0 z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(120,40,200,0.15),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(120,40,200,0.15),transparent)]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[1px] w-[60%] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(120,40,200,0.06),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(120,40,200,0.15),transparent)]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[1px] w-[60%] bg-gradient-to-r from-transparent via-purple-500/20 dark:via-purple-500/40 to-transparent" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-7xl space-y-10 p-6 sm:p-8 lg:p-10">

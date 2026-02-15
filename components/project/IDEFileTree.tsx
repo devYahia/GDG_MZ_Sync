@@ -48,13 +48,13 @@ export function IDEFileTree({
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#252526] text-[#cccccc] text-sm">
-      <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-2 py-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-white/70">Explorer</span>
+    <div className="flex h-full flex-col bg-card/30 text-foreground text-sm">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-2 py-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Explorer</span>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 text-white/50 hover:text-white"
+          className="h-6 w-6 text-muted-foreground hover:text-foreground"
           onClick={onAddFile}
           title="New file"
         >
@@ -79,7 +79,7 @@ export function IDEFileTree({
             <div key={folder}>
               <button
                 type="button"
-                className="flex w-full items-center gap-1 py-0.5 px-2 hover:bg-white/5 text-left"
+                className="flex w-full items-center gap-1 py-1 px-2 hover:bg-muted text-left"
                 onClick={() => toggleFolder(folder)}
               >
                 {isExpanded ? (
@@ -137,8 +137,8 @@ function FileRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-1.5 py-0.5 px-2 cursor-pointer",
-        isActive && "bg-white/10 text-white"
+        "group flex items-center gap-1.5 py-1 px-2 cursor-pointer transition-colors",
+        isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted/50"
       )}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

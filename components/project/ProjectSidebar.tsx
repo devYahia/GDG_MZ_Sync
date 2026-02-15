@@ -18,10 +18,10 @@ interface ProjectSidebarProps {
 
 export function ProjectSidebar({ items, activeId, onSelect }: ProjectSidebarProps) {
     return (
-        <div className="flex h-full w-full flex-col bg-black/60 border-r border-white/10">
+        <div className="flex h-full w-full flex-col bg-muted/20 border-r border-border">
             {/* Sidebar Header */}
-            <div className="shrink-0 border-b border-white/10 px-4 py-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">
+            <div className="shrink-0 border-b border-border px-4 py-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
                     Navigation
                 </h3>
             </div>
@@ -35,15 +35,15 @@ export function ProjectSidebar({ items, activeId, onSelect }: ProjectSidebarProp
                         className={cn(
                             "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                             activeId === item.id
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-sm shadow-purple-500/10"
-                                : "text-white/60 hover:bg-white/5 hover:text-white/90 border border-transparent"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
                         )}
                     >
                         <span className={cn(
                             "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
                             activeId === item.id
-                                ? "bg-purple-500/30 text-purple-300"
-                                : "bg-white/5 text-white/40"
+                                ? "bg-primary-foreground/20 text-primary-foreground"
+                                : "bg-muted text-muted-foreground/60"
                         )}>
                             {item.type === "description" ? (
                                 <FileText className="h-3.5 w-3.5" />
@@ -57,8 +57,8 @@ export function ProjectSidebar({ items, activeId, onSelect }: ProjectSidebarProp
             </nav>
 
             {/* Footer */}
-            <div className="shrink-0 border-t border-white/10 p-3">
-                <div className="flex items-center gap-2 text-xs text-white/30">
+            <div className="shrink-0 border-t border-border p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
                     <Users className="h-3 w-3" />
                     <span>{items.filter(i => i.type === "persona").length} Personas</span>
                 </div>

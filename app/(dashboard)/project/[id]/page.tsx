@@ -21,20 +21,20 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   if (!task) notFound()
 
   return (
-    <div className="flex h-screen flex-col bg-black text-white selection:bg-purple-500/30">
+    <div className="flex h-screen flex-col bg-background text-foreground selection:bg-primary/20">
       {/* Top bar */}
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-white/10 bg-black/80 px-4 backdrop-blur-sm">
+      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to projects
         </Link>
-        <div className="flex-1 truncate text-sm font-medium text-white">
+        <div className="flex-1 truncate text-sm font-medium text-foreground">
           {task.title}
         </div>
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/60">
+        <span className="rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
           Level L{task.level}
         </span>
       </header>

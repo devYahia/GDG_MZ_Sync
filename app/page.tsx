@@ -1,8 +1,8 @@
 "use client"
 
 import { GradientButton } from "@/components/ui/gradient-button"
-import { ArrowRight } from "lucide-react"
-import { motion } from "framer-motion"
+import { ArrowRight, Sparkles } from "lucide-react"
+import { motion, useScroll, useTransform } from "motion/react"
 import { Features } from "@/components/landing/Features"
 import { HeroMonitor } from "@/components/landing/HeroMonitor"
 import UnicornScene from "unicornstudio-react/next"
@@ -11,32 +11,60 @@ import Link from "next/link"
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
+  const { scrollY } = useScroll()
+  const navBg = useTransform(scrollY, [0, 80], ["rgba(0,0,0,0.4)", "rgba(0,0,0,0.85)"])
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.15])
+  const heroScale = useTransform(scrollY, [0, 400], [1, 0.97])
+  const heroY = useTransform(scrollY, [0, 400], [0, 60])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   return (
-    <div className="min-h-screen bg-black text-white relative selection:bg-purple-500/30">
+    <div className="min-h-screen bg-black text-white relative selection:bg-purple-500/30 overflow-x-hidden">
 
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/40 backdrop-blur-xl transition-all duration-300">
+      <motion.nav
+        style={{ backgroundColor: navBg }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 backdrop-blur-xl transition-all duration-300"
+      >
         <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <div className="text-xl font-bold tracking-tighter text-white font-logo">
+          <motion.div
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="text-xl font-bold tracking-tighter text-white font-logo"
+          >
             Interna<span className="text-purple-500">.</span> Virtual
+          </motion.div>
+          <div className="hidden md:flex items-center gap-2 text-sm font-medium text-white/70">
+            {["Features", "About", "Pricing"].map((label, i) => (
+              <motion.a
+                key={label}
+                href={`#${label.toLowerCase()}`}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
+                className="px-4 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white transition-all duration-300"
+              >
+                {label}
+              </motion.a>
+            ))}
           </div>
-          <div className="hidden md:flex items-center gap-4 text-sm font-medium text-white/70">
-            <a href="#features" className="px-4 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white transition-all backdrop-blur-md">Features</a>
-            <a href="#about" className="px-4 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white transition-all backdrop-blur-md">About</a>
-            <a href="#pricing" className="px-4 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white transition-all backdrop-blur-md">Pricing</a>
-          </div>
-          <div className="flex items-center gap-4">
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          >
             <Link href="/login">
-              <GradientButton variant="variant" className="h-9 px-4 text-xs font-semibold">Log in</GradientButton>
+              <GradientButton variant="variant" className="h-9 px-4 text-xs font-semibold">
+                Log in
+              </GradientButton>
             </Link>
-          </div>
+          </motion.div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <section className="relative flex min-h-screen items-center justify-center pt-24 pb-12 overflow-hidden">
@@ -51,68 +79,107 @@ export default function LandingPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/90 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_100%)] opacity-50" />
+          {/* Gradient orbs */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/15 rounded-full blur-[100px] pointer-events-none" />
         </div>
 
-        <div className="container relative z-10 mx-auto px-6">
+        <motion.div
+          style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
+          className="container relative z-10 mx-auto px-6"
+        >
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-
-            {/* Left Column: Text Content */}
+            {/* Left Column */}
             <div className="flex flex-col gap-8 text-center lg:text-left">
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.1 }}
-                className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white drop-shadow-2xl leading-[1.1]"
+                transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 w-fit mx-auto lg:mx-0"
               >
-                Transforming Calculators into <br />
+                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                <span className="text-xs font-medium text-white/80">AI-driven internship simulator</span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white drop-shadow-2xl leading-[1.08]"
+              >
+                Transforming calculators into{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-purple-400">
-                  Battle-Ready Problem Solvers
+                  battle-ready problem solvers
                 </span>
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
                 className="mx-auto lg:mx-0 max-w-xl text-lg md:text-xl text-white/60 leading-relaxed"
               >
-                Bridge the academic-professional divide with a high-fidelity behavioral simulator. Escape the &quot;Notebook Trap&quot;, dismantle the &quot;Jargon Barrier&quot;, and navigate real-world friction with AI-driven stakeholders.
+                Bridge the academic–professional divide with a high-fidelity behavioral simulator. Escape the &quot;Notebook Trap&quot;, dismantle the &quot;Jargon Barrier&quot;, and navigate real-world friction with AI-driven stakeholders.
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4"
+                transition={{ duration: 0.6, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
               >
                 <Link href="/signup" className="w-full sm:w-auto">
-                  <GradientButton className="w-full sm:w-auto text-base px-8 py-6 group">
-                    Get Started <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <GradientButton className="w-full sm:w-auto text-base px-8 py-6 group rounded-xl">
+                    Get started
+                    <ArrowRight className="ml-2 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </GradientButton>
                 </Link>
+                <motion.a
+                  href="#features"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="text-sm text-white/50 hover:text-white/80 transition-colors underline underline-offset-4"
+                >
+                  See how it works
+                </motion.a>
               </motion.div>
             </div>
 
-            {/* Right Column: 3D Monitor / Creative Component */}
-            <div className="relative w-full flex justify-center lg:justify-end">
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-full flex justify-center lg:justify-end"
+            >
               <HeroMonitor />
-            </div>
-
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="relative z-10 py-32 bg-black border-t border-white/5">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(88,28,135,0.15),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(88,28,135,0.12),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(59,7,100,0.08),transparent_40%)] pointer-events-none" />
 
         <div className="container mx-auto px-6 relative">
-          <div className="mb-20 text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Beyond Static Tutorials</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-20 text-center max-w-3xl mx-auto"
+          >
+            <p className="text-sm font-medium text-purple-400/90 uppercase tracking-widest mb-4">
+              Why Interna
+            </p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+              Beyond static tutorials
+            </h2>
             <p className="text-white/50 text-lg leading-relaxed">
               We replace the &quot;Correct Answer&quot; with satisfied stakeholders and deployed systems.
             </p>
-          </div>
+          </motion.div>
 
           <div className="max-w-7xl mx-auto">
             <Features />
@@ -121,31 +188,58 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 py-32 overflow-hidden border-t border-white/5">
+      <section id="pricing" className="relative z-10 py-32 overflow-hidden border-t border-white/5">
         <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-black to-black pointer-events-none" />
-        <div className="container mx-auto px-6 text-center relative max-w-4xl">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">Ready to Transform?</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="container mx-auto px-6 text-center relative max-w-4xl"
+        >
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
+            Ready to transform?
+          </h2>
           <p className="text-white/60 max-w-xl mx-auto mb-10 text-lg">
-            Join thousands of developers building the future of web applications using our advanced toolkit.
+            Join developers building the future with our advanced toolkit.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <GradientButton className="w-full sm:w-auto h-14 px-10 text-lg">Start Building Now</GradientButton>
-            <GradientButton variant="variant" className="w-full sm:w-auto h-14 px-10 text-lg">Contact Sales</GradientButton>
+            <Link href="/signup">
+              <motion.span whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+                <GradientButton className="w-full sm:w-auto h-14 px-10 text-lg rounded-xl">
+                  Start building now
+                </GradientButton>
+              </motion.span>
+            </Link>
+            <motion.a
+              href="#"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="text-white/60 hover:text-white transition-colors text-lg font-medium"
+            >
+              Contact sales
+            </motion.a>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 bg-black py-12">
+      <motion.footer
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="relative z-10 border-t border-white/5 bg-black py-12"
+      >
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-white/30 text-sm">
           <p>© 2026 Interna Virtual. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="#" className="hover:text-white transition-colors duration-200">Privacy</a>
+            <a href="#" className="hover:text-white transition-colors duration-200">Terms</a>
+            <a href="#" className="hover:text-white transition-colors duration-200">Contact</a>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   )
 }

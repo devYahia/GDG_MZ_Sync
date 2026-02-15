@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Terminal, Cpu, Activity, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -18,10 +18,14 @@ export function HeroMonitor() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.9, rotateY: 15 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="relative w-full aspect-video md:aspect-[16/10] max-w-2xl mx-auto perspective-1000"
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+            }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full aspect-video md:aspect-[16/10] max-w-2xl mx-auto"
         >
             {/* 3D Monitor/Screen Frame */}
             <div className={cn(
@@ -88,7 +92,11 @@ export function HeroMonitor() {
             </div>
 
             {/* Reflection/Glow under monitor */}
-            <div className="absolute -bottom-10 left-10 right-10 h-10 bg-purple-500/20 blur-3xl opacity-50 rounded-full" />
+            <motion.div
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-10 left-10 right-10 h-10 bg-purple-500/20 blur-3xl rounded-full"
+            />
         </motion.div>
     )
 }

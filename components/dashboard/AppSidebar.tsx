@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -14,6 +15,7 @@ import {
   Terminal,
   BookOpen,
   Target,
+  UsersRound,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "motion/react"
@@ -26,6 +28,7 @@ const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/dashboard", label: "Projects", icon: FolderKanban, exact: false },
   { href: "/dashboard", label: "My Progress", icon: Target, exact: false },
+  { href: "/dashboard/mentor", label: "Mentor", icon: UsersRound, exact: false },
   { href: "/dashboard", label: "Resources", icon: BookOpen, exact: false },
 ]
 
@@ -38,10 +41,13 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const { collapsed, setCollapsed, width } = useSidebar()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard" || pathname.startsWith("/dashboard/project")
-    return pathname.startsWith(href)
+    if (href === "/dashboard/mentor") return pathname?.startsWith("/dashboard/mentor")
+    if (href === "/dashboard") return pathname === "/dashboard" || pathname?.startsWith("/dashboard/project")
+    return pathname?.startsWith(href)
   }
 
   return (
@@ -145,7 +151,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="text-xs text-muted-foreground"
               >
-                {theme === "dark" ? "Dark" : "Light"}
+                {mounted ? (theme === "dark" ? "Dark" : "Light") : "\u00A0"}
               </motion.span>
             )}
           </AnimatePresence>

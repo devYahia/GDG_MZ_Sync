@@ -15,6 +15,8 @@ export interface ProjectChatRequest {
   client_mood: string
   messages: ChatMessage[]
   language: ChatLanguage
+  /** Current code from the IDE so the customer can reference it */
+  code_context?: string
 }
 
 export interface ProjectChatResponse {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -12,7 +13,6 @@ import {
   ChevronRight,
   Moon,
   Sun,
-  Terminal,
   BookOpen,
   Target,
   UsersRound,
@@ -39,10 +39,11 @@ const bottomItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const { collapsed, setCollapsed, width } = useSidebar()
   const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+
+  useEffect(() => { setMounted(true) }, [])
 
   const isActive = (href: string) => {
     if (href === "/dashboard/mentor") return pathname?.startsWith("/dashboard/mentor")
@@ -66,20 +67,26 @@ export function AppSidebar() {
           href="/dashboard"
           className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-lg py-2 transition-colors hover:bg-accent/50"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
-            <Terminal className="h-5 w-5" />
+          {/* Small purple "iv" mark for collapsed state */}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
+            <span className="text-sm font-black tracking-tighter text-primary font-logo select-none">iv</span>
           </div>
           <AnimatePresence mode="wait">
             {!collapsed && (
-              <motion.span
+              <motion.div
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.15 }}
-                className="truncate text-base font-bold tracking-tight text-foreground font-logo"
+                className="flex flex-col leading-none overflow-hidden"
               >
-                Interna<span className="text-primary">.</span>
-              </motion.span>
+                <span className="text-sm font-black tracking-tight text-foreground font-logo whitespace-nowrap">
+                  INTER<span className="text-primary">NA</span><span className="text-primary">.</span>
+                </span>
+                <span className="text-[9px] font-bold tracking-wider text-muted-foreground font-logo whitespace-nowrap">
+                  <span className="text-primary">V</span>IRTUAL
+                </span>
+              </motion.div>
             )}
           </AnimatePresence>
         </Link>
@@ -87,7 +94,7 @@ export function AppSidebar() {
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
@@ -136,11 +143,11 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
+            className="relative h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:text-foreground overflow-hidden"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute left-0 top-0 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 absolute" />
+            <Moon className="h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
             <span className="sr-only">Toggle theme</span>
           </Button>
           <AnimatePresence mode="wait">
@@ -151,7 +158,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="text-xs text-muted-foreground"
               >
-                {mounted ? (theme === "dark" ? "Dark" : "Light") : "\u00A0"}
+                {mounted ? (resolvedTheme === "dark" ? "Dark" : "Light") : null}
               </motion.span>
             )}
           </AnimatePresence>

@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search, Bell, LogOut, ChevronDown, User } from "lucide-react"
+import { Bell, LogOut, ChevronDown, User } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { signout } from "@/app/(auth)/actions"
@@ -17,7 +16,6 @@ interface AppNavbarProps {
 
 export function AppNavbar({ userName, userEmail }: AppNavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
 
   const initials = userName
     .split(" ")
@@ -28,18 +26,8 @@ export function AppNavbar({ userName, userEmail }: AppNavbarProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 px-6 backdrop-blur-xl">
-      {/* Search */}
-      <div className="flex flex-1 items-center gap-4">
-        <div className="relative flex max-w-md flex-1 items-center">
-          <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects, tracks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 rounded-xl border-border bg-muted/50 pl-10 pr-4 text-sm transition-all placeholder:text-muted-foreground focus:bg-background dark:bg-muted/30"
-          />
-        </div>
-      </div>
+      {/* Spacer (search removed — ProjectGallery has its own) */}
+      <div className="flex-1" />
 
       {/* Right: Notifications + User */}
       <div className="flex items-center gap-2">

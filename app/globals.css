@@ -27,7 +27,8 @@
     --radius: 0.75rem;
   }
 
-  .light {
+  .light,
+  html.light {
     --background: 0 0% 98%;
     --foreground: 0 0% 9%;
     --card: 0 0% 100%;

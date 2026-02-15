@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { FIELD_CONFIG } from "@/lib/tasks"
-import { DashboardClient } from "@/components/dashboard/DashboardClient"
+import { HomeWelcome } from "@/components/dashboard/HomeWelcome"
+import { HomeStats } from "@/components/dashboard/HomeStats"
+import { QuickAccess } from "@/components/dashboard/QuickAccess"
+import { TaskGrid } from "@/components/dashboard/TaskGrid"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -16,13 +17,18 @@ export default async function DashboardPage() {
         .eq("id", user.id)
         .single()
 
-    if (!profile || !profile.onboarding_completed) redirect("/signup")
-
     return (
-        <DashboardClient
-            userName={profile.full_name}
-            fieldKey={profile.field}
-            experienceLevel={profile.experience_level}
-        />
+        <div className="space-y-8">
+            <HomeWelcome
+                userName={profile?.full_name ?? user.email ?? "Developer"}
+                fieldKey={profile?.field ?? "frontend"}
+                experienceLevel={profile?.experience_level ?? "junior"}
+            />
+            <HomeStats />
+            <QuickAccess />
+            <section className="space-y-6">
+                <TaskGrid />
+            </section>
+        </div>
     )
 }

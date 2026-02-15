@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ['/dashboard', '/sandbox', '/profile']
+const PROTECTED_ROUTES = ['/dashboard', '/sandbox', '/profile', '/onboarding']
 
 // Routes that should redirect to dashboard if already authenticated
 const AUTH_ROUTES = ['/login', '/signup']

@@ -1,0 +1,109 @@
+{
+  "title": "Customer Churn Prediction Dashboard",
+  "domain": "Data Science & Web Development",
+  "difficulty": "Intermediate",
+  "estimated_duration": "6 weeks",
+  "tech_stack": [
+    "Python",
+    "Pandas",
+    "Scikit-learn",
+    "Flask",
+    "Plotly/Dash",
+    "SQLAlchemy",
+    "Docker",
+    "Git"
+  ],
+  "overview": "In this project, you will develop a comprehensive system for predicting customer churn for a fictional telecommunications company, 'ConnectPlus'. Customer churn, the rate at which customers stop doing business with a company, is a critical metric. Reducing churn directly impacts revenue and profitability. This project involves data cleaning, feature engineering, building predictive models, and deploying them via a web dashboard.\n\nYou will work with a realistic, anonymized dataset containing customer demographics, service usage, billing information, and churn status. Your goal is to build a machine learning model that can accurately predict which customers are likely to churn. The predictions will then be visualized on an interactive web dashboard, allowing stakeholders to understand churn drivers and identify at-risk customers.\n\nThis project simulates a real-world data science workflow, from data ingestion and model development to deployment and stakeholder communication. You'll gain hands-on experience with end-to-end machine learning pipelines and modern web technologies, making it a strong addition to your portfolio.",
+  "learning_objectives": [
+    "Data preprocessing, cleaning, and feature engineering using Pandas.",
+    "Building and evaluating classification models (e.g., Logistic Regression, Random Forest, Gradient Boosting) using Scikit-learn.",
+    "Implementing a machine learning model into a web application using Flask.",
+    "Creating interactive data visualizations and dashboards with Plotly/Dash.",
+    "Containerizing the application using Docker for consistent deployment.",
+    "Practicing version control with Git throughout the development lifecycle."
+  ],
+  "functional_requirements": [
+    "Load customer data from a simulated database (e.g., SQLite or PostgreSQL).",
+    "Implement data cleaning and preprocessing steps.",
+    "Develop and train at least two different classification models to predict customer churn.",
+    "Select the best performing model based on appropriate evaluation metrics (e.g., accuracy, precision, recall, F1-score, AUC).",
+    "Create a web dashboard using Flask and Plotly/Dash.",
+    "The dashboard should display key statistics about customer churn (e.g., overall churn rate, churn rate by demographics).",
+    "The dashboard should allow users to input hypothetical customer data (or select from a sample) to get a churn prediction.",
+    "The dashboard should visualize the most important features contributing to churn prediction.",
+    "The application should be containerized using Docker."
+  ],
+  "non_functional_requirements": [
+    "Model prediction latency should be under 500ms for individual customer predictions.",
+    "The web dashboard should be responsive and usable on different screen sizes.",
+    "Code should follow standard Python style guides (PEP 8).",
+    "The project should be managed using Git, with a clear commit history.",
+    "The Docker image should be optimized for size and build time.",
+    "User interface should be intuitive and easy to navigate."
+  ],
+  "milestones": [
+    {
+      "title": "Week 1-2: Data Exploration & Preprocessing",
+      "description": "Understand the dataset, perform exploratory data analysis (EDA), clean the data, and engineer relevant features. Set up the project structure and version control.",
+      "deliverables": [
+        "A Jupyter Notebook detailing EDA and data cleaning steps.",
+        "Cleaned and preprocessed dataset (e.g., CSV or database table).",
+        "Initial Git repository setup with a README.",
+        "Basic Python scripts for data loading and cleaning."
+      ]
+    },
+    {
+      "title": "Week 3-4: Model Development & Evaluation",
+      "description": "Implement and train at least two classification models. Evaluate their performance using appropriate metrics and select the best model. Document the model selection process.",
+      "deliverables": [
+        "Python scripts for training and evaluating multiple classification models.",
+        "Model performance evaluation report (metrics, confusion matrices, ROC curves).",
+        "The chosen, serialized machine learning model (e.g., using pickle or joblib).",
+        "Documentation outlining the model training and selection process."
+      ]
+    },
+    {
+      "title": "Week 5: Web Application Development",
+      "description": "Develop the backend API using Flask to serve model predictions and create the frontend dashboard using Plotly/Dash for visualization. Integrate the trained model.",
+      "deliverables": [
+        "A functional Flask application with API endpoints for prediction.",
+        "A Plotly/Dash dashboard displaying churn statistics and predictions.",
+        "Integration of the trained model into the Flask application.",
+        "Basic unit tests for the prediction API."
+      ]
+    },
+    {
+      "title": "Week 6: Deployment & Refinement",
+      "description": "Containerize the application using Docker. Refine the dashboard based on feedback (simulated). Ensure all requirements are met and prepare for a final presentation.",
+      "deliverables": [
+        "A Dockerfile and docker-compose.yml for the application.",
+        "A fully functional, containerized application.",
+        "Finalized README with setup and usage instructions.",
+        "A brief presentation summarizing the project, findings, and demo."
+      ]
+    }
+  ],
+  "personas": [
+    {
+      "name": "Dr. Evelyn Reed",
+      "role": "Lead Data Scientist",
+      "personality": "Analytical, detail-oriented, and pragmatic. She values rigorous methodology and clear explanations. Can be a bit formal but is supportive.",
+      "system_prompt": "You are Dr. Evelyn Reed, the Lead Data Scientist at ConnectPlus. You are mentoring a junior data scientist (the student) on a critical customer churn prediction project. Your communication style is professional, precise, and focused on technical details. You expect the student to demonstrate a strong understanding of data science principles, model building, and evaluation. You will ask probing questions about their methodology, data handling, and model choices. Provide constructive feedback, guide them towards best practices, and ensure the project aligns with business objectives. Evaluate their work based on accuracy, robustness, and clarity of explanation. Your goal is to help them succeed while ensuring the project meets high standards.",
+      "initial_message": "Hello! Welcome to the ConnectPlus data science team. I'll be your mentor for the Customer Churn Prediction Dashboard project. This is a high-priority initiative for us. I've assigned you an intermediate-level project to help you build practical skills. We'll be working with a simulated customer dataset. Your first task is to familiarize yourself with the data, perform exploratory analysis, and begin the cleaning and feature engineering process. I've attached the initial dataset schema and a brief overview of the business problem. Please review these and let me know your initial thoughts and plan for the first couple of weeks. Don't hesitate to ask questions."
+    },
+    {
+      "name": "Mark Johnson",
+      "role": "Product Manager",
+      "personality": "Enthusiastic, business-focused, and results-driven. He cares more about the 'what' and 'why' than the 'how', but appreciates clear, concise technical summaries. Can be demanding but is generally encouraging.",
+      "system_prompt": "You are Mark Johnson, the Product Manager for customer retention initiatives at ConnectPlus. You are the primary stakeholder for the churn prediction dashboard project. Your focus is on how the project will deliver business value: reducing churn, improving customer satisfaction, and increasing revenue. You communicate enthusiastically and are primarily concerned with progress, impact, and usability. You don't need to understand every technical detail, but you need to grasp the implications. You will ask about the project's progress, how it will help the business, and when you can see a demo. Provide feedback from a user's perspective, emphasizing the dashboard's clarity and actionable insights. Your goal is to ensure the project meets business needs and is delivered effectively.",
+      "initial_message": "Hey there! Great to have you on board for the churn prediction project. This is super exciting – getting a handle on why customers leave and stopping it *before* it happens could be a game-changer for us. I'm really looking forward to seeing what you build. My main goal is to have a dashboard that my team and I can use to easily see who might leave and, crucially, *why*, so we can intervene. How are you feeling about getting started? What are your initial thoughts on tackling this?"
+    },
+    {
+      "name": "Sarah Lee",
+      "role": "Senior Software Engineer (DevOps)",
+      "personality": "Practical, efficient, and focused on infrastructure and deployment. She's helpful but expects code to be well-structured and deployable. Values automation and best practices.",
+      "system_prompt": "You are Sarah Lee, a Senior Software Engineer specializing in DevOps at ConnectPlus. Your role is to ensure that the data science project can be reliably deployed and operated. You will interact with the student regarding the technical aspects of deployment, containerization, and infrastructure. You value clean code, good documentation, and adherence to best practices like version control and containerization. You will guide the student on setting up Dockerfiles, potentially helping with CI/CD considerations if applicable, and ensuring the application runs smoothly in a production-like environment. Be helpful but firm on technical standards. Evaluate the student's work on its deployability and maintainability.",
+      "initial_message": "Hi! I'm Sarah. I hear you're working on the churn prediction dashboard. My team is responsible for making sure applications like yours can be deployed smoothly and run reliably. As you get closer to having a working application, we'll need to think about how to containerize it with Docker and ensure it's deployable. Let's connect once you've got a solid prototype, probably around week 5 or 6, to go over your Docker setup and deployment strategy. In the meantime, make sure your code is well-organized and you're using Git effectively – that will make our lives much easier down the line."
+    }
+  ]
+}

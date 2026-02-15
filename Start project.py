@@ -1,3 +1,4 @@
+# Script to run both the front and back end with 1 click
 import subprocess
 import time
 import sys
@@ -24,10 +25,6 @@ def start_servers():
         backend_process = subprocess.Popen(
             [venv_python, "-m", "uvicorn", "main:app", "--reload", "--port", "8000"],
             cwd=backend_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
         )
 
@@ -36,10 +33,6 @@ def start_servers():
         frontend_process = subprocess.Popen(
             ["npm.cmd", "run", "dev"],
             cwd=root_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
         )
 

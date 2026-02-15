@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation"
-import { Rocket } from "lucide-react"
+import { Rocket, Sparkles } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/server"
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar"
 import { TaskGrid } from "@/components/dashboard/TaskGrid"
 import { FIELD_CONFIG } from "@/lib/tasks"
+import { Button } from "@/components/ui/button"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -84,14 +85,26 @@ export default async function DashboardPage() {
                     </div>
 
                     {/* Section Title */}
-                    <div className="mb-6 flex items-center gap-2">
-                        <Rocket className="h-5 w-5 text-purple-500" />
-                        <h2 className="text-lg font-semibold text-white">
-                            Available Simulations
-                        </h2>
-                        <span className="ml-1 text-sm text-white/50">
-                            Pick a scenario and start your session
-                        </span>
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                            <Rocket className="h-5 w-5 text-purple-500" />
+                            <h2 className="text-lg font-semibold text-white">
+                                Available Simulations
+                            </h2>
+                            <span className="ml-1 text-sm text-white/50">
+                                Pick a scenario and start your session
+                            </span>
+                        </div>
+
+                        <Button
+                            className="bg-white/5 border border-white/10 hover:bg-white/10 text-white gap-2"
+                            asChild
+                        >
+                            <a href="/simulations/create">
+                                <Sparkles className="h-4 w-4 text-purple-400" />
+                                Create Custom Simulation
+                            </a>
+                        </Button>
                     </div>
 
                     {/* Task Grid with Filters */}

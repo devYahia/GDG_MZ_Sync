@@ -7,6 +7,7 @@ import { Features } from "@/components/landing/Features"
 import { HeroMonitor } from "@/components/landing/HeroMonitor"
 import UnicornScene from "unicornstudio-react/next"
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
@@ -30,7 +31,9 @@ export default function LandingPage() {
             <a href="#pricing" className="px-4 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white transition-all backdrop-blur-md">Pricing</a>
           </div>
           <div className="flex items-center gap-4">
-            <GradientButton variant="variant" className="h-9 px-4 text-xs font-semibold">Log in</GradientButton>
+            <Link href="/login">
+              <GradientButton variant="variant" className="h-9 px-4 text-xs font-semibold">Log in</GradientButton>
+            </Link>
           </div>
         </div>
       </nav>
@@ -82,9 +85,11 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4"
               >
-                <GradientButton className="w-full sm:w-auto text-base px-8 py-6 group">
-                  Get Started <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </GradientButton>
+                <Link href="/signup" className="w-full sm:w-auto">
+                  <GradientButton className="w-full sm:w-auto text-base px-8 py-6 group">
+                    Get Started <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </GradientButton>
+                </Link>
               </motion.div>
             </div>
 

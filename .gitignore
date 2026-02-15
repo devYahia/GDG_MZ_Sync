@@ -26,7 +26,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -40,6 +45,7 @@ yarn-error.log*
 next-env.d.ts
 
 # python backend
+venv/
 backend/venv/
 __pycache__/
 *.pyc

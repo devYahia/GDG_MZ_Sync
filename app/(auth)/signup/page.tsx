@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
     Terminal,
     Loader2,
@@ -9,10 +10,8 @@ import {
     Lock,
     User,
     ArrowRight,
-    Check,
     MapPin,
     Shield,
-    MailCheck,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -32,20 +31,18 @@ const REGIONS = [
     "Middle East",
 ]
 
-type Step = 1 | 2
-
 export default function SignupPage() {
-    const [step, setStep] = useState<Step>(1)
     const [isPending, startTransition] = useTransition()
+    const router = useRouter()
 
-    // Step 1 data
+    // Form data
     const [fullName, setFullName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [region, setRegion] = useState("")
 
-    function handleStep1() {
+    function handleSignup() {
         if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !region.trim()) {
             toast.error("Please fill in all fields")
             return
@@ -70,10 +67,12 @@ export default function SignupPage() {
                 return
             }
 
+            // If we get a success message (auto-login failed), redirect to login
             if (result?.success) {
                 toast.success(result.success)
-                setStep(2)
+                router.push("/login")
             }
+            // Otherwise the server action already redirected to /dashboard
         })
     }
 
@@ -97,26 +96,7 @@ export default function SignupPage() {
                     </span>
                 </Link>
 
-                {/* Progress Bar */}
-                <div className="mb-6 flex items-center gap-2">
-                    {[1, 2].map((s) => (
-                        <div
-                            key={s}
-                            className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= step
-                                ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                                : "bg-white/10"
-                                }`}
-                        />
-                    ))}
-                </div>
-                <p className="mb-4 text-center text-xs text-white/40">
-                    Step {step} of 2
-                </p>
-
                 <div className="glass-card rounded-2xl p-8 shadow-2xl">
-                    {/* Step 1: Account */}
-                    {step === 1 && (
-                        <>
                             <div className="text-center mb-6">
                                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400">
                                     Create your account
@@ -197,7 +177,7 @@ export default function SignupPage() {
                                             { label: "Lowercase (a-z)", met: /[a-z]/.test(password) },
                                             { label: "Uppercase (A-Z)", met: /[A-Z]/.test(password) },
                                             { label: "Number (0-9)", met: /[0-9]/.test(password) },
-                                            { label: "Special char (!@#...)", met: /[!@#$%^&*()_+\-=\[\]{};':"|<>?,./`~]/.test(password) },
+                                            { label: "Special char (!@#...)", met: /[!@#$%^&*()_+\-=\[\]{};':"|\<\>?,./`~]/.test(password) },
                                         ].map((req, i) => (
                                             <div key={i} className="flex items-center gap-2">
                                                 <div className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${req.met ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-white/20"}`} />
@@ -226,7 +206,7 @@ export default function SignupPage() {
                                 <Button
                                     className="w-full h-12 bg-gradient-to-r from-[#4e1e40] to-black border border-white/10 hover:shadow-[0_0_20px_-5px_rgba(78,30,64,0.5)] transition-all duration-300 rounded-lg font-medium text-white"
                                     disabled={isPending}
-                                    onClick={handleStep1}
+                                    onClick={handleSignup}
                                 >
                                     {isPending ? (
                                         <>
@@ -241,38 +221,6 @@ export default function SignupPage() {
                                     )}
                                 </Button>
 
-                                {/* Google OAuth - Postponed for demo, can be activated later */}
-                                {/* 
-                                <div className="relative my-6">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-white/10" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-black/50 px-2 text-white/40 backdrop-blur-sm">
-                                            Or check in with
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    variant="outline"
-                                    type="button"
-                                    className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white hover:border-white/20 transition-all font-normal relative overflow-hidden group"
-                                    onClick={() => {
-                                        startTransition(async () => {
-                                            await signInWithGoogle()
-                                        })
-                                    }}
-                                    disabled={isPending}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                                    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                                        <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                                    </svg>
-                                    Google
-                                </Button>
-                                */}
-
                                 <p className="text-center text-xs text-white/40">
                                     Already have an account?{" "}
                                     <Link
@@ -283,92 +231,6 @@ export default function SignupPage() {
                                     </Link>
                                 </p>
                             </div>
-                        </>
-                    )}
-
-                    {/* Step 2: Check Your Email */}
-                    {step === 2 && (
-                        <>
-                            <div className="text-center mb-6">
-                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/20 border border-purple-500/30">
-                                    <MailCheck className="h-8 w-8 text-purple-400" />
-                                </div>
-                                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400">
-                                    Check your email
-                                </h1>
-                                <p className="text-white/50 text-sm mt-3">
-                                    We sent a confirmation link to
-                                </p>
-                                <p className="text-purple-300 font-medium mt-1">
-                                    {email}
-                                </p>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
-                                            <Check className="h-3 w-3 text-purple-400" />
-                                        </div>
-                                        <p className="text-sm text-white/70">
-                                            Open the email from Interna
-                                        </p>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
-                                            <Check className="h-3 w-3 text-purple-400" />
-                                        </div>
-                                        <p className="text-sm text-white/70">
-                                            Click the confirmation link
-                                        </p>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
-                                            <Check className="h-3 w-3 text-purple-400" />
-                                        </div>
-                                        <p className="text-sm text-white/70">
-                                            You will be redirected to complete your profile
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <p className="text-center text-xs text-white/40">
-                                    Didn&apos;t receive the email? Check your spam folder or{" "}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            startTransition(async () => {
-                                                const result = await signup({
-                                                    email,
-                                                    password,
-                                                    confirmPassword,
-                                                    fullName,
-                                                    region,
-                                                })
-                                                if (result?.error) {
-                                                    toast.error(result.error)
-                                                } else if (result?.success) {
-                                                    toast.success("Confirmation email resent!")
-                                                }
-                                            })
-                                        }}
-                                        disabled={isPending}
-                                        className="text-purple-400 hover:underline hover:text-purple-300 disabled:opacity-50"
-                                    >
-                                        {isPending ? "Sending..." : "resend it"}
-                                    </button>
-                                </p>
-
-                                <div className="pt-2">
-                                    <Link
-                                        href="/login"
-                                        className="block text-center text-sm text-white/50 hover:text-white/70 transition-colors"
-                                    >
-                                        Back to sign in
-                                    </Link>
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </div>
 
                 <p className="mt-8 text-center font-mono text-xs text-white/20">

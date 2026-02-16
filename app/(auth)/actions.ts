@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
 import { z } from "zod"
 
 import { createClient } from "@/lib/supabase/server"
@@ -18,7 +17,7 @@ const authSchema = z.object({
         .regex(/[a-z]/, "Password must contain at least one lowercase letter")
         .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
         .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[!@#$%^&*()_+\-=\[\]{};':"|<>?,./`~]/, "Password must contain at least one special character"),
+        .regex(/[!@#$%^&*()_+\-=\[\]{};':"|\<\>?,./`~]/, "Password must contain at least one special character"),
 })
 
 const signupSchema = authSchema
@@ -100,7 +99,8 @@ export async function signup(data: {
 
     const supabase = await createClient()
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up the user (email confirmation is disabled via DB trigger)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: validated.data.email,
         password: validated.data.password,
         options: {
@@ -111,14 +111,39 @@ export async function signup(data: {
         },
     })
 
-    if (error) {
-        return { error: error.message }
+    if (signUpError) {
+        if (signUpError.message.includes("already registered")) {
+            return { error: "An account with this email already exists. Please sign in instead." }
+        }
+        return { error: signUpError.message }
     }
 
-    return {
-        success:
-            "Account created! Please check your email and click the confirmation link to verify your account.",
+    // Auto-login immediately after signup (no email verification needed)
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: validated.data.email,
+        password: validated.data.password,
+    })
+
+    if (loginError) {
+        // Signup succeeded but auto-login failed -- still a success, user can login manually
+        return { success: "Account created! Please sign in with your credentials." }
     }
+
+    // Create profile if it doesn't exist
+    if (signUpData.user) {
+        await supabase.from("profiles").upsert({
+            id: signUpData.user.id,
+            full_name: validated.data.fullName,
+            region: validated.data.region,
+            field: "frontend",
+            experience_level: "student",
+            interests: [],
+            onboarding_completed: false,
+        }, { onConflict: "id" })
+    }
+
+    revalidatePath("/", "layout")
+    redirect("/dashboard")
 }
 
 
@@ -167,29 +192,3 @@ export async function signout(): Promise<void> {
     revalidatePath("/", "layout")
     redirect("/")
 }
-
-export async function signInWithGoogle() {
-    const supabase = await createClient()
-    const origin = headers().get("origin")
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-            redirectTo: `${origin}/auth/callback`,
-            queryParams: {
-                access_type: "offline",
-                prompt: "consent",
-            },
-        },
-    })
-
-    if (error) {
-        console.error(error)
-        return { error: error.message }
-    }
-
-    if (data.url) {
-        redirect(data.url)
-    }
-}
-

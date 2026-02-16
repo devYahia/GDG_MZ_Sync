@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Mic, MicOff, Video, VideoOff, X, MessageSquare } from "lucide-react"
+import { Mic, MicOff, Video, VideoOff, X, MessageSquare, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 // import { useSpeechRecognition } from "@/hooks/useSpeechRecognition" // We'll implement inline for simplicity or hook if needed
@@ -40,14 +40,40 @@ export function ActiveSession({
     const recognitionRef = useRef<any>(null)
     const synthRef = useRef<SpeechSynthesis | null>(null)
     const lastAIResponseRef = useRef<string>("")
+    const [shouldBeListening, setShouldBeListening] = useState(false) // Track intended state
 
     // Audio Context State
     const [audioContextReady, setAudioContextReady] = useState(false)
+    const [volume, setVolume] = useState(0)
+    const [interimTranscript, setInterimTranscript] = useState("")
 
     // Initialize Video
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream
+        }
+
+        // Audio Visualizer
+        if (stream) {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+            const source = audioContext.createMediaStreamSource(stream)
+            const analyser = audioContext.createAnalyser()
+            analyser.fftSize = 256
+            source.connect(analyser)
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount)
+
+            const updateVolume = () => {
+                analyser.getByteFrequencyData(dataArray)
+                const avg = dataArray.reduce((a, b) => a + b) / dataArray.length
+                setVolume(avg) // 0 to 255
+                requestAnimationFrame(updateVolume)
+            }
+            updateVolume()
+
+            return () => {
+                audioContext.close()
+            }
         }
     }, [stream])
 
@@ -76,14 +102,16 @@ export function ActiveSession({
                 recognition.onend = () => {
                     console.log("Speech recognition ended")
                     setIsListening(false)
-                    // Auto-restart if we didn't explicitly stop it (and assuming we want continuous)
-                    // logic to be added if needed, but for now let's rely on button or re-click
+                    // Auto-restart ONLY if we intended to facilitate continuous listening
+                    // checking a ref or state would be better here to avoid loops
                 }
 
                 recognition.onerror = (event: any) => {
                     console.error("Speech recognition error", event.error)
                     setIsListening(false)
-                    toast.error(`Mic Error: ${event.error}`)
+                    if (event.error !== "aborted" && event.error !== "no-speech") {
+                        toast.error(`Mic Error: ${event.error}`)
+                    }
                 }
 
                 recognition.onresult = (event: any) => {
@@ -102,6 +130,9 @@ export function ActiveSession({
                             interim += event.results[i][0].transcript
                         }
                     }
+
+                    setInterimTranscript(interim)
+
                     if (final) {
                         setTranscript(prev => {
                             const newVal = prev ? `${prev} ${final}` : final
@@ -117,8 +148,25 @@ export function ActiveSession({
         }
     }, [language])
 
+    // Auto-restart logic based on "shouldBeListening"
+    useEffect(() => {
+        if (!recognitionRef.current) return
+
+        if (shouldBeListening && !isListening) {
+            try {
+                recognitionRef.current.start()
+            } catch (e) {
+                // ignore if already started
+            }
+        } else if (!shouldBeListening && isListening) {
+            recognitionRef.current.stop()
+        }
+    }, [shouldBeListening, isListening])
+
+
     const startSession = () => {
         setAudioContextReady(true)
+        setShouldBeListening(true) // Start listening
         // Trigger initial greeting if empty
         if (messages.length === 0) {
             handleSendMessage("", true)
@@ -168,10 +216,11 @@ export function ActiveSession({
 
         setIsAIProcessing(true)
         setTranscript("") // Clear input
+        setInterimTranscript("")
 
         // Stop listening while processing to avoid echoes/loops
-        if (isListening) {
-            recognitionRef.current?.stop()
+        if (shouldBeListening) {
+            setShouldBeListening(false) // Temporarily stop
         }
 
         // Add user message to history (unless initial trigger)
@@ -208,26 +257,23 @@ export function ActiveSession({
             toast.error("Failed to connect to Interviewer")
         } finally {
             setIsAIProcessing(false)
+            setShouldBeListening(true) // Resume listening automatically
         }
     }
 
     const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop()
-        } else {
-            recognitionRef.current?.start()
-        }
+        setShouldBeListening(prev => !prev)
     }
 
     return (
         <motion.div
-            className="flex h-full w-full flex-col items-center justify-between p-4 relative"
+            className="flex h-[calc(100vh-4rem)] w-full flex-col items-center justify-between p-4 relative overflow-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
             {/* Context / Header */}
-            <div className="absolute top-4 left-4 z-10 flex cursor-pointer items-center gap-2 rounded-full bg-black/40 px-4 py-2 text-sm text-white/70 backdrop-blur-md hover:bg-black/60" onClick={onEnd}>
+            <div className="absolute top-4 left-4 z-20 flex cursor-pointer items-center gap-2 rounded-full bg-background/60 px-4 py-2 text-sm text-foreground/80 backdrop-blur-md hover:bg-background/80 border border-border" onClick={onEnd}>
                 <X className="h-4 w-4" />
                 <span>End Session</span>
             </div>
@@ -235,45 +281,33 @@ export function ActiveSession({
             {/* Avatar Centerpiece */}
             <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl relative">
 
-                {/* The Flowing Sphere */}
+                {/* The Flowing Sphere - Simplified Visuals */}
                 <div className="relative flex items-center justify-center">
 
-                    {/* Ambient Background Pulse */}
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.3, 0.1, 0.3],
-                        }}
-                        transition={{
-                            duration: 4,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                        className="absolute h-64 w-64 rounded-full bg-primary/20 blur-3xl"
-                    />
+                    {/* Clean Gradient Glow instead of blobs */}
+                    <div className={cn(
+                        "absolute inset-0 bg-primary/20 blur-[100px] rounded-full transition-all duration-1000",
+                        isAISpeaking ? "scale-150 opacity-40" : "scale-100 opacity-20"
+                    )} />
 
                     {/* Core Sphere */}
                     <motion.div
                         animate={{
-                            scale: isAISpeaking ? [1, 1.15, 1] : [1, 1.05, 1],
-                            borderRadius: isAISpeaking
-                                ? ["50% 50% 50% 50%", "30% 70% 70% 30%", "50% 50% 50% 50%", "40% 60% 60% 40%"]
-                                : ["50%", "45% 55% 55% 45%", "50%", "55% 45% 45% 55%"],
-                            filter: isAISpeaking ? "brightness(1.4) hue-rotate(15deg)" : "brightness(1) hue-rotate(0deg)",
-                            rotate: isAISpeaking ? [0, 10, -10, 0] : [0, 5, -5, 0]
+                            scale: isAISpeaking ? [1, 1.1, 1] : [1, 1.02, 1],
+                            filter: isAISpeaking ? "brightness(1.2)" : "brightness(1)",
                         }}
                         transition={{
-                            duration: isAISpeaking ? 3 : 8,
+                            duration: isAISpeaking ? 0.5 : 4,
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
                         className={cn(
-                            "h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 blur-md shadow-[0_0_100px_-20px_rgba(168,85,247,0.6)]",
-                            "relative z-10"
+                            "h-56 w-56 rounded-full bg-gradient-to-br from-primary via-indigo-500 to-purple-600 shadow-2xl shadow-primary/30",
+                            "relative z-10 flex items-center justify-center"
                         )}
                     >
-                        {/* Inner fluid effect overlay (simulation) */}
-                        <div className="absolute inset-0 rounded-full bg-white opacity-20 mix-blend-overlay" />
+                        {/* Simple reflection */}
+                        <div className="absolute top-0 right-0 h-full w-full rounded-full bg-gradient-to-bl from-white/20 to-transparent" />
                     </motion.div>
 
                     {/* Orbiting Particles */}
@@ -297,9 +331,9 @@ export function ActiveSession({
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="mt-12 max-w-2xl text-center"
+                            className="mt-12 max-w-2xl text-center z-10"
                         >
-                            <p className="text-xl md:text-2xl font-medium leading-relaxed text-white/90 drop-shadow-md">
+                            <p className="text-xl md:text-2xl font-medium leading-relaxed text-foreground/90 drop-shadow-sm">
                                 "{lastAIResponseRef.current}"
                             </p>
                         </motion.div>
@@ -312,15 +346,26 @@ export function ActiveSession({
 
                 {/* Transcript Preview */}
                 <div className={cn(
-                    "w-full rounded-xl bg-black/40 p-4 backdrop-blur-md border border-white/10 transition-all text-center",
-                    transcript ? "opacity-100" : "opacity-0 h-0 p-0 overflow-hidden"
+                    "w-full rounded-xl bg-card/60 p-4 backdrop-blur-md border border-border/50 transition-all text-center min-h-[60px] flex items-center justify-center flex-col gap-2",
+                    (transcript || interimTranscript) ? "opacity-100" : "opacity-0 h-0 p-0 overflow-hidden"
                 )}>
-                    <p className="text-white/80">{transcript}</p>
+                    <p className="text-foreground/90 font-medium">{transcript} <span className="text-muted-foreground">{interimTranscript}</span></p>
+                    {shouldBeListening && volume > 10 && (
+                        <div className="flex gap-1 h-1 items-end justify-center">
+                            {[...Array(5)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="w-1 bg-green-500 rounded-full"
+                                    animate={{ height: Math.min(20, Math.max(4, volume / (2 * (i + 1)))) }}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Control Bar */}
                 <div className="flex items-center gap-6">
-                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white/20 bg-black/50 shadow-lg">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-border bg-black/50 shadow-lg">
                         <video
                             ref={videoRef}
                             autoPlay
@@ -331,34 +376,41 @@ export function ActiveSession({
                     </div>
 
                     <div className="relative">
-                        {isListening && (
-                            <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-75"></span>
+                        {shouldBeListening && (
+                            <span className={cn(
+                                "absolute inset-0 animate-ping rounded-full opacity-75",
+                                volume > 20 ? "bg-green-500" : "bg-red-500"
+                            )}></span>
                         )}
                         <Button
                             size="icon"
-                            variant={isListening ? "default" : "secondary"}
+                            variant={shouldBeListening ? "destructive" : "secondary"}
                             className={cn(
                                 "relative h-16 w-16 rounded-full shadow-xl transition-all duration-300 z-10",
-                                isListening ? "bg-red-500 hover:bg-red-600" : "bg-white hover:bg-gray-100"
+                                shouldBeListening ? "bg-red-500 hover:bg-red-600 text-white" : "bg-secondary hover:bg-secondary/80 text-muted-foreground"
                             )}
                             onClick={toggleListening}
                         >
-                            {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6 text-black" />}
+                            {shouldBeListening ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
                         </Button>
+                        {/* Audio Bar Overlay */}
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
+                            Vol: {Math.round(volume)}
+                        </div>
                     </div>
 
                     <Button
                         size="icon"
                         variant="secondary"
-                        className="h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20"
+                        className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
                         onClick={() => handleSendMessage()}
                         disabled={!transcript.trim() || isAIProcessing}
                     >
                         <MessageSquare className="h-5 w-5" />
                     </Button>
                 </div>
-                <p className="text-xs text-white/40 uppercase tracking-widest font-medium">
-                    {isListening ? "Listening..." : "Tap mic to speak"}
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
+                    {shouldBeListening ? "Listening..." : "Mic Muted"}
                 </p>
             </div>
         </motion.div>

@@ -1,6 +1,5 @@
 "use client"
 
-import { DashboardShell } from "@/components/dashboard/DashboardShell"
 import { ProgressClient } from "@/components/dashboard/progress/ProgressClient"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
@@ -31,12 +30,5 @@ export default function ProgressPage() {
 
     if (!user) return null
 
-    return (
-        <DashboardShell
-            userName={user.profile?.full_name ?? user.email ?? "Developer"}
-            userEmail={user.email ?? ""}
-        >
-            <ProgressClient />
-        </DashboardShell>
-    )
+    return <ProgressClient />
 }

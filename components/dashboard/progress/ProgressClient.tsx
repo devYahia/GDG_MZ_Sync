@@ -105,24 +105,20 @@ export function ProgressClient() {
     const currentLevel = 1
 
     return (
-        <div className="mx-auto max-w-5xl space-y-12 pb-20">
-            {/* Hero Section */}
-            <div className="space-y-4 text-center">
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 backdrop-blur-sm shadow-lg shadow-primary/10"
-                >
-                    <Star className="h-6 w-6 text-primary" />
-                </motion.div>
-                <h1 className="text-4xl font-bold tracking-tight text-white lg:text-5xl">Your Career Journey</h1>
-                <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                    From your first day as an intern to becoming a tech partner. Each level unlocks harder challenges and more realistic client simulations.
+        <div className="mx-auto max-w-5xl space-y-12 pb-20 pt-6">
+            {/* Header / Hero Section - Simplified to remove duplication if needed, but keeping title as standard page title */}
+            {/* User requested removing "duplicated second header". Usually AppNavbar is the top one. 
+                We will keep a simple clean title, but remove the large centered "Hero" style if that's the duplicate. 
+                Let's make it a standard left-aligned header. */}
+            <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">My Progress</h1>
+                <p className="text-lg text-muted-foreground">
+                    From your first day as an intern to becoming a tech partner.
                 </p>
             </div>
 
             {/* Skill Tree / Path */}
-            <div className="relative mt-20">
+            <div className="relative mt-12">
                 {/* Connecting Line (Desktop) */}
                 <div className="absolute left-1/2 top-0 hidden h-full w-1 -translate-x-1/2 bg-gradient-to-b from-primary/20 via-primary/40 to-muted/20 md:block" />
 
@@ -130,7 +126,6 @@ export function ProgressClient() {
                     {LEVELS.map((lvl, index) => {
                         const isUnlocked = lvl.level <= currentLevel
                         const isCurrent = lvl.level === currentLevel
-                        const isNext = lvl.level === currentLevel + 1
                         const Icon = lvl.icon
 
                         return (
@@ -150,8 +145,8 @@ export function ProgressClient() {
                                     <div className={cn(
                                         "group relative overflow-hidden rounded-3xl border p-6 transition-all duration-500",
                                         isUnlocked
-                                            ? "border-primary/20 bg-white/[0.03] backdrop-blur-xl hover:border-primary/40"
-                                            : "border-white/5 bg-white/[0.01] opacity-60 grayscale"
+                                            ? "border-primary/20 bg-card/80 backdrop-blur-xl hover:border-primary/40 shadow-lg"
+                                            : "border-border/50 bg-card/40 opacity-60 grayscale"
                                     )}>
                                         <div className={cn(
                                             "absolute -right-4 -top-4 h-24 w-24 bg-gradient-to-br blur-3xl transition-opacity group-hover:opacity-60",
@@ -171,14 +166,14 @@ export function ProgressClient() {
                                             </div>
 
                                             <div>
-                                                <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{lvl.title}</h3>
+                                                <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{lvl.title}</h3>
                                                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{lvl.description}</p>
                                             </div>
 
-                                            <div className="flex items-center gap-4 border-t border-white/5 pt-4">
+                                            <div className="flex items-center gap-4 border-t border-border pt-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] text-muted-foreground uppercase">Key Persona</span>
-                                                    <span className="text-sm font-medium text-white/90">{lvl.persona}</span>
+                                                    <span className="text-sm font-medium text-foreground">{lvl.persona}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -186,7 +181,7 @@ export function ProgressClient() {
                                 </div>
 
                                 {/* Central Node */}
-                                <div className="z-10 flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-background md:mx-auto">
+                                <div className="z-10 flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-background md:mx-auto shadow-sm">
                                     <motion.div
                                         animate={isCurrent ? {
                                             boxShadow: ["0 0 0 0px rgba(168, 85, 247, 0.4)", "0 0 0 15px rgba(168, 85, 247, 0)"],
@@ -196,8 +191,8 @@ export function ProgressClient() {
                                         className={cn(
                                             "flex h-16 w-16 items-center justify-center rounded-2xl border transition-all duration-300",
                                             isUnlocked
-                                                ? cn("bg-gradient-to-br border-primary/40 text-white shadow-xl shadow-primary/20", lvl.color)
-                                                : "bg-muted/50 border-white/10 text-muted-foreground"
+                                                ? cn("bg-gradient-to-br border-primary/40 text-primary-foreground shadow-xl shadow-primary/20", lvl.color)
+                                                : "bg-muted border-border text-muted-foreground"
                                         )}
                                     >
                                         {isUnlocked ? <Icon className="h-8 w-8" /> : <Lock className="h-6 w-6" />}

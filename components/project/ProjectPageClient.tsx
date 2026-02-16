@@ -197,7 +197,6 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                         <button
                             onClick={() => {
                                 setHasStarted(true)
-                                setIsLoading(true)
                             }}
                             className="px-8 py-3 rounded-full bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors"
                         >
@@ -205,7 +204,7 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div >
         )
     }
 

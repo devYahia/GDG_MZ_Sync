@@ -1,5 +1,6 @@
 import os
 import asyncio
+from schemas import ChatAnalysisResponse
 
 # Lazy imports applied throughout to improve startup time
 

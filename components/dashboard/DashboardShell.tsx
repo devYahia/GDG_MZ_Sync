@@ -19,8 +19,9 @@ function DashboardShellInner({
   const pathname = usePathname()
   const { width } = useSidebar()
   const isProjectPage = pathname?.startsWith("/dashboard/project")
+  const isIDEPage = pathname === "/ide"
 
-  if (isProjectPage) {
+  if (isProjectPage || isIDEPage) {
     return <>{children}</>
   }
 

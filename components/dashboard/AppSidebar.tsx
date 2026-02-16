@@ -12,6 +12,7 @@ import {
   ChevronRight,
   BookOpen,
   Target,
+  Code2,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -29,6 +30,7 @@ interface AppSidebarProps {
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban, exact: false },
+  { href: "/ide", label: "IDE", icon: Code2, exact: false },
   { href: "/dashboard/progress", label: "My Progress", icon: Target, exact: false },
   { href: "/dashboard/resources", label: "Resources", icon: BookOpen, exact: false },
 ]

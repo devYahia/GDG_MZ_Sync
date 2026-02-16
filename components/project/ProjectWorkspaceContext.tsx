@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 
 const DEFAULT_FILES: Record<string, string> = {
   "src/index.js": "// Entry point – implement your solution here.\n// Use Run (▶) to execute and see output.\n",
@@ -56,7 +56,7 @@ export function ProjectWorkspaceProvider({
   const [sessionId, setSessionId] = useState<string | null>(null)
 
   // 1. Initialize Backend Session
-  useState(() => {
+  useEffect(() => {
     const initSession = async () => {
       try {
         const res = await fetch("http://127.0.0.1:8000/api/repo/init", {
@@ -71,7 +71,7 @@ export function ProjectWorkspaceProvider({
       }
     }
     initSession()
-  })
+  }, [])
 
   const setActiveFileId = useCallback((path: string) => {
     setActiveFileIdState((prev) => (files[path] !== undefined ? path : prev))

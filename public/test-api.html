@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Next.js API Route</title>
+</head>
+<body>
+    <h1>Testing Next.js API Route</h1>
+    <button onclick="testAPI()">Test /api/generate-simulation</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            output.textContent = 'Sending request...\n';
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch('/api/generate-simulation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: 'Test App',
+                        context: 'Testing the API',
+                        level: 'L2'
+                    })
+                });
+                
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                output.textContent += `Response received in ${elapsed}s\n`;
+                output.textContent += `Status: ${response.status}\n\n`;
+                
+                const data = await response.json();
+                output.textContent += JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                output.textContent += `ERROR: ${error.message}\n`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

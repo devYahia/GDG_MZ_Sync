@@ -75,6 +75,7 @@ export default function CreateSimulationPage() {
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Validate input fields
         if (!title || !context) {
             toast({
                 title: "Incomplete details",
@@ -84,39 +85,98 @@ export default function CreateSimulationPage() {
             return
         }
 
+        // Start loading state
         setIsLoading(true)
         setGeneratedResult(null)
 
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+            console.error("Request timed out after 60 seconds")
+            setIsLoading(false)
+            toast({
+                title: "Request timed out",
+                description: "The simulation generation is taking too long. Please try again.",
+                variant: "destructive"
+            })
+        }, 60000) // 60 second timeout
+
         try {
+            console.log("Starting simulation generation...", { title, context, level: levelKey })
+
+            // Make API call to generate simulation
             const response = await fetch("/api/generate-simulation", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title, context, level: levelKey }),
             })
 
-            const data = await response.json()
+            console.log("Response received:", response.status, response.statusText)
 
-            if (!response.ok) {
-                throw new Error(data?.error || "Failed to generate simulation")
+            // Clear timeout since we got a response
+            clearTimeout(timeoutId)
+
+            // Parse response - this can throw if JSON is invalid
+            let data
+            try {
+                data = await response.json()
+                console.log("Response data parsed successfully")
+            } catch (parseError) {
+                console.error("Failed to parse response JSON:", parseError)
+                throw new Error("Server returned invalid response format")
             }
 
+            // Check if response was successful
+            if (!response.ok) {
+                console.error("API error:", data)
+                throw new Error(data?.error || data?.message || "Failed to generate simulation")
+            }
+
+            // Validate response structure
+            if (!data.simulation_id || !data.simulation_data) {
+                console.error("Invalid response structure:", data)
+                throw new Error("Server returned incomplete data")
+            }
+
+            console.log("Simulation generated successfully:", data.simulation_id)
+
+            // Show success message
             toast({
                 title: "Success!",
-                description: "Your simulation has been generated. Here’s the preview.",
+                description: "Your simulation has been generated. Here's the preview.",
             })
 
+            // Store generated result to show preview
             setGeneratedResult({
                 simulation_id: data.simulation_id,
                 simulation_data: data.simulation_data,
             })
+
+            // Stop loading
+            setIsLoading(false)
         } catch (error) {
+            // Clear timeout if still active
+            clearTimeout(timeoutId)
+            
+            // Log error for debugging
             console.error("Generation error:", error)
+            
+            // Determine error message
+            let errorMessage = "Failed to generate simulation. Please try again."
+            
+            if (error instanceof TypeError && error.message.includes("fetch")) {
+                errorMessage = "Network error. Please check your connection and try again."
+            } else if (error instanceof Error) {
+                errorMessage = error.message
+            }
+            
+            // Show error message to user
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Something went wrong while generating the simulation.",
+                title: "Generation failed",
+                description: errorMessage,
                 variant: "destructive"
             })
-        } finally {
+            
+            // Stop loading state so user can try again
             setIsLoading(false)
         }
     }
@@ -309,8 +369,8 @@ export default function CreateSimulationPage() {
                                                         type="button"
                                                         onClick={() => setLevelNum(i)}
                                                         className={`text-[9px] font-mono transition-colors ${i === levelNum
-                                                                ? getLevelColor(levelNum) + " font-bold"
-                                                                : "text-white/20 hover:text-white/40"
+                                                            ? getLevelColor(levelNum) + " font-bold"
+                                                            : "text-white/20 hover:text-white/40"
                                                             }`}
                                                     >
                                                         {i}

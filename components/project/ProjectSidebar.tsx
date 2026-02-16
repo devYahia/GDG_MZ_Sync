@@ -33,7 +33,7 @@ export function ProjectSidebar({ groups, activeId, onSelect }: ProjectSidebarPro
 
             {/* Navigation Items */}
             <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-                {items.map((item) => (
+                {groups.flatMap(group => group.items).map((item) => (
                     <button
                         key={item.id}
                         onClick={() => onSelect(item.id)}

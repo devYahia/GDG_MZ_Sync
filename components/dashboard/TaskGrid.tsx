@@ -6,10 +6,11 @@ import { Sparkles, FolderKanban } from "lucide-react"
 
 import { TaskCard } from "@/components/dashboard/TaskCard"
 import { TaskFilters } from "@/components/dashboard/TaskFilters"
-import { TASKS, type TaskField } from "@/lib/tasks"
+import { TASKS, type TaskField, type TaskDifficulty } from "@/lib/tasks"
 
 export function TaskGrid() {
     const [selectedTracks, setSelectedTracks] = useState<TaskField[]>([])
+    const [selectedDifficulties, setSelectedDifficulties] = useState<TaskDifficulty[]>([])
     const [selectedLevels, setSelectedLevels] = useState<number[]>([])
     const [searchQuery, setSearchQuery] = useState("")
 
@@ -46,9 +47,11 @@ export function TaskGrid() {
             </motion.div>
             <TaskFilters
                 selectedTracks={selectedTracks}
+                selectedDifficulties={selectedDifficulties}
                 selectedLevels={selectedLevels}
                 searchQuery={searchQuery}
                 onTracksChange={setSelectedTracks}
+                onDifficultiesChange={setSelectedDifficulties}
                 onLevelsChange={setSelectedLevels}
                 onSearchChange={setSearchQuery}
             />

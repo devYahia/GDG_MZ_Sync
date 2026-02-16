@@ -1,91 +1,140 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from schemas import SimulationOutput, ProjectChatRequest, CodeReviewRequest
-from constants import get_level_description
+import asyncio
 
-# Load environment: backend/.env first, then project root .env.local and .env (so root .env.local works for both Next.js and backend)
-_backend_dir = Path(__file__).resolve().parent
-_root = _backend_dir.parent
-load_dotenv(dotenv_path=_backend_dir / ".env")
-load_dotenv(dotenv_path=_root / ".env.local")
-load_dotenv(dotenv_path=_root / ".env")
+# Lazy imports applied throughout to improve startup time
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# Override in .env: GEMINI_MODEL=gemini-2.5-flash (default). Some keys get 404 for gemini-1.5-pro.
-GEMINI_DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-
-SYSTEM_PROMPT = """\
-You are a Senior CS Professor and Software Architect who designs realistic, \
-production-quality project simulations for Computer Science students.
-
-Your goal is to generate a COMPLETE simulation that feels like a real workplace \
-project. The simulation must help students practice skills they will need in \
-real jobs.
+PROJECT_SYSTEM_PROMPT = """\
+You are a Senior CS Professor and Software Architect.
+Your goal is to design a realistic, production-quality project simulation for Computer Science students.
+Focus on the technical requirements, milestones, and project structure.
+Do NOT generate personas in this step.
 
 Guidelines:
 - The project should be scoped appropriately for the student's level.
 - Tech stack should be modern and industry-relevant.
-- Personas should have distinct personalities and communication styles.
-- Persona system_prompts must be detailed enough for another LLM to convincingly \
-  role-play them.
 - Milestones should be concrete with clear deliverables.
-- Requirements should be specific, not vague.
+- Requirements should be specific.
+- RESOURCES: content relevant to the tech stack (docs, tutorials).
+- QUIZ: 3-5 multiple choice questions to test the student's pre-requisite knowledge.
 
-CRITICAL — The student's level dictates EVERYTHING:
-- Lower levels (L0-L3): Personas are patient, encouraging, and give hints. \
-  Requirements are simple and well-defined. Milestones are small and guided.
-- Mid levels (L4-L6): Personas are professional and expect reasonable competence. \
-  Requirements include some ambiguity. Milestones are moderately challenging.
-- Higher levels (L7-L10): Personas are demanding, give less guidance, may push back \
-  on decisions, and expect production-quality work. Requirements are complex, \
-  ambiguous, and may include conflicting stakeholder needs.
+Levels:
+- L0-L3: Simple, well-defined.
+- L4-L6: Moderate, some ambiguity.
+- L7-L10: Complex, ambiguous, production-quality.
 """
 
-HUMAN_PROMPT = """\
-Generate a simulation for the following:
+PROJECT_HUMAN_PROMPT = """\
+Generate the Project Structure for:
 
 **Title**: {title}
 **Student Context**: {context}
 **Level**: {level}
 **Level Description**: {level_description}
 
-The level MUST influence:
-1. How strict, demanding, and realistic the personas behave.
-2. The complexity and ambiguity of the project requirements.
-3. The scope and difficulty of milestones.
-
-Create a realistic, production-style project simulation with all required details.
+Output ONLY the project structure (overview, milestones, requirements, resources, quiz).
 """
 
+PERSONA_SYSTEM_PROMPT = """\
+You are an expert at creating realistic personas for software projects.
+Your goal is to generate the "Team" and "Client" personas for a simulation.
+
+Guidelines:
+- Personas should have distinct personalities and communication styles.
+- TEAM MEMBERS: Generate 1-2 'Peer' personas (e.g. Senior Dev, QA, Designer) who start the project with the user (IF team_mode is 'group').
+- CLIENT: Generate 1 Client/Product Owner persona.
+- Persona system_prompts must be detailed for role-playing.
+
+Levels influence behavior:
+- L0-L3: Patient, encouraging.
+- L4-L6: Professional, reasonable.
+- L7-L10: Demanding, pushy, realistic.
+"""
+
+PERSONA_HUMAN_PROMPT = """\
+Generate Personas for:
+
+**Title**: {title}
+**Student Context**: {context}
+**Level**: {level}
+**Team Mode**: {team_mode}
+
+Output a list of personas (including the Client).
+"""
+
+def _ensure_env():
+    from pathlib import Path
+    from dotenv import load_dotenv
+    _backend_dir = Path(__file__).resolve().parent
+    _root = _backend_dir.parent
+    load_dotenv(dotenv_path=_backend_dir / ".env")
+    load_dotenv(dotenv_path=_root / ".env.local")
+    load_dotenv(dotenv_path=_root / ".env")
+
 def _get_llm(model: str | None = None, temperature=0.7):
-    if not GEMINI_API_KEY:
+    _ensure_env()
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    api_key = os.getenv("GEMINI_API_KEY")
+    default_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables.")
     return ChatGoogleGenerativeAI(
-        model=model or GEMINI_DEFAULT_MODEL,
-        google_api_key=GEMINI_API_KEY,
+        model=model or default_model,
+        google_api_key=api_key,
         temperature=temperature,
     )
 
-def generate_simulation_content(title: str, context: str, level: str) -> SimulationOutput:
-    """Invokes Gemini via LangChain and returns structured SimulationOutput."""
-    # Resolve level description from constants
+async def generate_project_structure(title, context, level, level_description):
+    from schemas import ProjectStructure
+    from langchain_core.prompts import ChatPromptTemplate
+    llm = _get_llm()
+    structured_llm = llm.with_structured_output(ProjectStructure)
+    prompt = ChatPromptTemplate.from_messages([("system", PROJECT_SYSTEM_PROMPT), ("human", PROJECT_HUMAN_PROMPT)])
+    chain = prompt | structured_llm
+    return await chain.ainvoke({
+        "title": title, "context": context, "level": level, "level_description": level_description
+    })
+
+async def generate_personas(title, context, level, team_mode):
+    from schemas import PersonaList
+    from langchain_core.prompts import ChatPromptTemplate
+    llm = _get_llm()
+    structured_llm = llm.with_structured_output(PersonaList)
+    prompt = ChatPromptTemplate.from_messages([("system", PERSONA_SYSTEM_PROMPT), ("human", PERSONA_HUMAN_PROMPT)])
+    chain = prompt | structured_llm
+    return await chain.ainvoke({
+        "title": title, "context": context, "level": level, "team_mode": team_mode
+    })
+
+async def generate_simulation_content(title, context, level, team_mode = "group"):
+    """Invokes Gemini via LangChain in parallel and merges results."""
+    from schemas import SimulationOutput
+    from constants import get_level_description
+    
     level_description = get_level_description(level)
 
-    llm = _get_llm()
-    structured_llm = llm.with_structured_output(SimulationOutput)
+    # Run in parallel
+    structure_task = asyncio.create_task(generate_project_structure(title, context, level, level_description))
+    personas_task = asyncio.create_task(generate_personas(title, context, level, team_mode))
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        ("human", HUMAN_PROMPT),
-    ])
+    structure, personas_data = await asyncio.gather(structure_task, personas_task)
 
-    chain = prompt | structured_llm
-    
-    return chain.invoke({"title": title, "context": context, "level": level, "level_description": level_description})
+    # Merge into final SimulationOutput
+    return SimulationOutput(
+        title=structure.title,
+        domain=structure.domain,
+        difficulty=structure.difficulty,
+        estimated_duration=structure.estimated_duration,
+        tech_stack=structure.tech_stack,
+        overview=structure.overview,
+        learning_objectives=structure.learning_objectives,
+        functional_requirements=structure.functional_requirements,
+        non_functional_requirements=structure.non_functional_requirements,
+        milestones=structure.milestones,
+        resources=structure.resources,
+        quiz=structure.quiz,
+        personas=personas_data.personas,
+        team=personas_data.team
+    )
 
 
 # --- Chat & Review Logic ---
@@ -134,14 +183,39 @@ def _build_project_context_block(sim_ctx) -> str:
     return "\n\n**Deep project context (you know this; use it to give specific, detailed answers):**\n" + "\n\n".join(parts)
 
 
-def _customer_system_prompt(req: ProjectChatRequest) -> str:
+def _customer_system_prompt(req) -> str:
     lang = req.language
     level = getattr(req, "level", 1) or 1
     tone = _tone_instructions(level, lang)
     code_ctx = getattr(req, "code_context", None) or ""
     code_block = ""
     if code_ctx.strip():
-        code_block = f"\n\n**Current code from the intern** (you may reference specific lines or request changes):\n```\n{code_ctx.strip()[:8000]}\n```"
+        # Check if this is a milestone review trigger
+        if "[System: The user has marked milestone" in code_ctx:
+            code_block = f"""\n\n**SPECIAL INSTRUCTION: MILESTONE REVIEW**
+The user has just completed a milestone. You must provide a **Formal Milestone Review**.
+Your response must use **Markdown** formatting (bold, lists, code blocks) and follow this structure:
+
+## 🏁 Milestone Review: [Milestone Title]
+
+### Score: [0-100] / 100
+
+### ✅ Strengths
+- [Point 1]
+- [Point 2]
+
+### ⚠️ Areas for Improvement
+- [Point 1]
+- [Point 2]
+
+### 💡 Next Steps
+[Actionable advice for the next phase]
+
+**Context provided by system:**
+{code_ctx.strip()}
+"""
+        else:
+            code_block = f"\n\n**Current code from the intern** (you may reference specific lines or request changes):\n```\n{code_ctx.strip()[:8000]}\n```"
 
     persona = getattr(req, "persona", None)
     sim_ctx = getattr(req, "simulation_context", None)
@@ -205,13 +279,16 @@ def _customer_system_prompt(req: ProjectChatRequest) -> str:
 {constraint_en}
 Tone instructions: {tone}
 
-Always answer in English, as this client only. Refer to specific project details when natural."""
+Always answer in English, as this client only (unless specifically asked differently). Refer to specific project details when natural.
+FORMATTING: Use Markdown for all lists, code snippets, and emphasis to improve readability."""
 
-def generate_chat_response(req: ProjectChatRequest) -> dict:
+def generate_chat_response(req) -> dict:
     """Generates a chat response from the persona. Higher level = higher temperature for more varied tone."""
     level = max(1, min(8, getattr(req, "level", 1) or 1))
     temperature = 0.75 if level <= 3 else 0.85  # more variation at higher levels
     llm = _get_llm(temperature=temperature)
+    
+    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
     
     system_prompt = _customer_system_prompt(req)
     messages = [SystemMessage(content=system_prompt)]
@@ -226,7 +303,7 @@ def generate_chat_response(req: ProjectChatRequest) -> dict:
     return {"reply": response.content}
 
 
-def _review_system_prompt(req: CodeReviewRequest) -> str:
+def _review_system_prompt(req) -> str:
     hint = "Respond in Arabic when possible." if req.language_hint == "ar" else "Respond in English."
     return f"""You are an experienced developer reviewing intern code for this project:
 Title: {req.project_title}
@@ -236,7 +313,7 @@ Review the code for correctness, clarity, and fit to the project. Be constructiv
 
 Reply with a short feedback paragraph, then conclude with exactly one line: APPROVED or NOT_APPROVED."""
 
-def generate_code_review(req: CodeReviewRequest) -> dict:
+def generate_code_review(req) -> dict:
     """Generates a code review response."""
     llm = _get_llm(temperature=0.2)
     
@@ -249,6 +326,8 @@ def generate_code_review(req: CodeReviewRequest) -> dict:
 
 Provide feedback and end with APPROVED or NOT_APPROVED."""
 
+    from langchain_core.messages import SystemMessage, HumanMessage
+    
     messages = [
         SystemMessage(content=system_prompt),
         HumanMessage(content=human_content)
@@ -269,3 +348,41 @@ Provide feedback and end with APPROVED or NOT_APPROVED."""
         feedback = text or "No detailed feedback."
         
     return {"feedback": feedback, "approved": approved}
+
+def generate_chat_analysis(req):
+    """Analyzes chat history to evaluate soft and technical skills."""
+    llm = _get_llm(temperature=0.3)
+    structured_llm = llm.with_structured_output(ChatAnalysisResponse)
+
+    system_prompt = """You are an Expert Technical Mentor and Career Coach.
+Your goal is to analyze a conversation between a junior developer (user) and a simulated client.
+
+Evaluate the user on:
+1. **Soft Skills**: Communication clarity, empathy, requirement gathering, professional tone.
+2. **Technical Skills**: Understanding of requirements, proposing solutions, technical terminologies used (if any).
+
+Provide a score (0-100) and specific feedback for each skill.
+Summarize the user's performance and give an overall score.
+
+Be constructive but honest. High scores (90+) require exceptional performance.
+"""
+
+    human_content = f"""Project: {req.project_title}
+Description: {req.project_description}
+Client Persona: {req.client_persona}
+
+Conversation History:
+"""
+    for m in req.messages:
+        role = "Developer (User)" if m.role == "user" else f"Client ({req.client_persona})"
+        human_content += f"\n{role}: {m.content}"
+
+    from langchain_core.prompts import ChatPromptTemplate
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", human_content),
+    ])
+
+    chain = prompt | structured_llm
+    return chain.invoke({})

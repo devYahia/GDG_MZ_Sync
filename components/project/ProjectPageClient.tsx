@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Sparkles, Zap, BarChart3, User, Users } from "lucide-react"
+import { Sparkles, Zap, BarChart3, User, Users, AlertCircle, Coins } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import type { SimulationTask } from "@/lib/tasks"
 import { generateSimulation, type SimulationData, postProjectChat, type ChatMessage, postChatAnalysis, type ChatAnalysisResponse } from "@/lib/api"
@@ -12,6 +12,7 @@ import { ProjectReport } from "./ProjectReport"
 import { ProjectWorkspaceProvider } from "./ProjectWorkspaceContext"
 import { ProjectIDE } from "./ProjectIDE"
 import { ProjectPresence } from "./ProjectPresence"
+import { checkAndDeductCredits } from "@/app/actions/credits"
 
 import { ProjectMilestones } from "./ProjectMilestones"
 import { ProjectResources } from "./ProjectResources"
@@ -35,6 +36,8 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
     const [hasStarted, setHasStarted] = useState(false)
     const [teamMode, setTeamMode] = useState<"solo" | "group">("group")
     const [error, setError] = useState<string | null>(null)
+    const [creditError, setCreditError] = useState<string | null>(null)
+    const [isCheckingCredits, setIsCheckingCredits] = useState(false)
     const [activeId, setActiveId] = useState("description")
     // Separate chat thread per persona (e.g. messagesByPersona["persona-0"])
     const [messagesByPersona, setMessagesByPersona] = useState<Record<string, ChatMessage[]>>({})
@@ -193,16 +196,40 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                         </button>
                     </div>
 
-                    <div className="flex justify-center pt-4">
+                    {creditError && (
+                        <div className="mx-auto max-w-md rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-center">
+                            <AlertCircle className="mx-auto mb-2 h-5 w-5 text-red-400" />
+                            <p className="text-sm text-red-300">{creditError}</p>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col items-center gap-3 pt-4">
                         <button
-                            onClick={() => {
-                                setHasStarted(true)
-                                setIsLoading(true)
+                            onClick={async () => {
+                                setCreditError(null)
+                                setIsCheckingCredits(true)
+                                try {
+                                    const result = await checkAndDeductCredits()
+                                    if (result.error) {
+                                        setCreditError(result.error)
+                                        return
+                                    }
+                                    setHasStarted(true)
+                                    setIsLoading(true)
+                                } catch {
+                                    setCreditError("Something went wrong. Please try again.")
+                                } finally {
+                                    setIsCheckingCredits(false)
+                                }
                             }}
-                            className="px-8 py-3 rounded-full bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors"
+                            disabled={isCheckingCredits}
+                            className="px-8 py-3 rounded-full bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Start Simulation
+                            {isCheckingCredits ? "Checking credits..." : "Start Simulation"}
                         </button>
+                        <span className="flex items-center gap-1.5 text-xs text-white/30">
+                            <Coins className="h-3 w-3" /> Costs 3 credits per simulation
+                        </span>
                     </div>
                 </div>
             </div>

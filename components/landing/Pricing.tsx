@@ -10,7 +10,7 @@ import {
 } from "react"
 import confetti from "canvas-confetti"
 import Link from "next/link"
-import { Check, Users, Rocket, Building2, Sparkles } from "lucide-react"
+import { Check, Users, Rocket, Building2, Sparkles, Coins } from "lucide-react"
 import NumberFlow from "@number-flow/react"
 import { cn } from "@/lib/utils"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
@@ -28,6 +28,8 @@ interface PricingPlan {
     href: string
     isPopular?: boolean
     icon: React.ElementType
+    creditsPerMonth: number
+    creditsPerSimulation: number
 }
 
 // --- Context ---
@@ -48,7 +50,10 @@ const PLANS: PricingPlan[] = [
         price: "0",
         yearlyPrice: "0",
         period: "month",
+        creditsPerMonth: 50,
+        creditsPerSimulation: 10,
         features: [
+            "50 credits / month",
             "1 virtual internship simulation",
             "Basic AI client personas",
             "Community support",
@@ -65,8 +70,10 @@ const PLANS: PricingPlan[] = [
         price: "19",
         yearlyPrice: "15",
         period: "month",
+        creditsPerMonth: 500,
+        creditsPerSimulation: 5,
         features: [
-            "Unlimited simulations",
+            "500 credits / month",
             "Advanced AI stakeholders",
             "Priority code reviews",
             "Real-time mentor feedback",
@@ -84,7 +91,10 @@ const PLANS: PricingPlan[] = [
         price: "99",
         yearlyPrice: "79",
         period: "seat/mo",
+        creditsPerMonth: 5000,
+        creditsPerSimulation: 3,
         features: [
+            "5,000 credits / seat / month",
             "Everything in Pro Intern",
             "Custom role simulations",
             "Candidate assessment dashboard",
@@ -340,6 +350,14 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
                                     Save ${(Number(plan.price) - Number(plan.yearlyPrice)) * 12}/year
                                 </motion.div>
                             )}
+                        </div>
+
+                        {/* Credit cost per simulation */}
+                        <div className="mb-4 flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-4 py-2.5 backdrop-blur-sm">
+                            <Coins className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                            <span className="text-sm text-white/60">
+                                <span className="font-semibold text-white/90">{plan.creditsPerSimulation} credits</span> per simulation
+                            </span>
                         </div>
 
                         {/* Gradient Divider */}

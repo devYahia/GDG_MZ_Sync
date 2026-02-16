@@ -22,6 +22,7 @@ export default async function DashboardLayout({
     <DashboardShell
       userName={profile?.full_name ?? user.email ?? "Developer"}
       userEmail={user.email ?? ""}
+      credits={profile?.credits ?? 0}
     >
       {children}
     </DashboardShell>

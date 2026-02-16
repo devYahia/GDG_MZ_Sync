@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Sparkles, ArrowLeft, Loader2, Zap, CheckCircle } from "lucide-react"
+import { Sparkles, ArrowLeft, Loader2, Zap, CheckCircle, AlertCircle, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { SimulationView } from "@/components/simulation-view"
+import { checkAndDeductCredits } from "@/app/actions/credits"
 
 const LEVEL_LABELS: Record<string, string> = {
     L0: "Absolute Beginner",
@@ -79,6 +80,26 @@ export default function CreateSimulationPage() {
             toast({
                 title: "Incomplete details",
                 description: "Please fill in the title and context.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Check and deduct credits before generating
+        try {
+            const creditResult = await checkAndDeductCredits()
+            if (creditResult.error) {
+                toast({
+                    title: "Insufficient Credits",
+                    description: creditResult.error,
+                    variant: "destructive"
+                })
+                return
+            }
+        } catch {
+            toast({
+                title: "Error",
+                description: "Failed to verify credits. Please try again.",
                 variant: "destructive"
             })
             return
@@ -338,8 +359,8 @@ export default function CreateSimulationPage() {
                                     <Sparkles className="mr-2 h-4 w-4" />
                                     Generate Simulation
                                 </Button>
-                                <p className="text-[10px] text-center text-white/40">
-                                    Our AI uses your context to design requirements, milestones, and personas for a totally immersive experience.
+                                <p className="text-[10px] text-center text-white/40 flex items-center justify-center gap-1">
+                                    <Coins className="h-3 w-3" /> Costs 3 credits per simulation
                                 </p>
                             </CardFooter>
                         </form>

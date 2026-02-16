@@ -14,31 +14,30 @@ export default async function Profile() {
         .eq("id", user.id)
         .single()
 
-    const { data: achievements } = await supabase
-        .from("achievements")
-        .select("*")
-        .order("rarity", { ascending: true })
+    let achievements: { id: string; slug: string; title: string; description: string; icon: string; category: string; xp_reward: number; credit_reward: number; rarity: string; created_at?: string }[] = []
+    let userAchievements: { achievement_id: string; unlocked_at: string }[] = []
+    let simulationCount: number | null = 0
 
-    const { data: userAchievements } = await supabase
-        .from("user_achievements")
-        .select("achievement_id, unlocked_at")
-        .eq("user_id", user.id)
+    try {
+        const [ach, uAch, simCount] = await Promise.all([
+            supabase.from("achievements").select("*").order("rarity", { ascending: true }),
+            supabase.from("user_achievements").select("achievement_id, unlocked_at").eq("user_id", user.id),
+            supabase.from("simulations").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+        ])
+        achievements = ach.data ?? []
+        userAchievements = uAch.data ?? []
+        simulationCount = simCount.count
+    } catch {
+        achievements = []
+        userAchievements = []
+        simulationCount = 0
+    }
 
-    const { count: simulationCount } = await supabase
-        .from("simulations")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-
-    const unlockedIds = new Set(
-        (userAchievements ?? []).map((ua) => ua.achievement_id)
-    )
-
-    const enrichedAchievements = (achievements ?? []).map((a) => ({
+    const unlockedIds = new Set(userAchievements.map((ua) => ua.achievement_id))
+    const enrichedAchievements = achievements.map((a) => ({
         ...a,
         unlocked: unlockedIds.has(a.id),
-        unlocked_at: (userAchievements ?? []).find(
-            (ua) => ua.achievement_id === a.id
-        )?.unlocked_at ?? null,
+        unlocked_at: userAchievements.find((ua) => ua.achievement_id === a.id)?.unlocked_at ?? null,
     }))
 
     return (

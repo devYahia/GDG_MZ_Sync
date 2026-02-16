@@ -23,14 +23,39 @@ import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 
 import { signup } from "../actions"
 
-const REGIONS = [
-    "North America",
-    "South America",
-    "Europe",
-    "Africa",
-    "Asia",
-    "Oceania",
-    "Middle East",
+const COUNTRIES = [
+    "Egypt",
+    "Saudi Arabia",
+    "UAE",
+    "Jordan",
+    "Morocco",
+    "Tunisia",
+    "Algeria",
+    "Iraq",
+    "Palestine",
+    "Lebanon",
+    "Syria",
+    "Libya",
+    "Sudan",
+    "Oman",
+    "Qatar",
+    "Bahrain",
+    "Kuwait",
+    "Yemen",
+    "Turkey",
+    "India",
+    "Pakistan",
+    "United States",
+    "United Kingdom",
+    "Germany",
+    "France",
+    "Canada",
+    "Nigeria",
+    "South Africa",
+    "Kenya",
+    "Brazil",
+    "Indonesia",
+    "Other",
 ]
 
 export default function SignupPage() {
@@ -140,7 +165,7 @@ export default function SignupPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="region" className="text-white/70">Region</Label>
+                            <Label htmlFor="region" className="text-white/70">Country</Label>
                             <div className="relative">
                                 <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
                                 <select
@@ -150,10 +175,10 @@ export default function SignupPage() {
                                     disabled={isPending}
                                     className="flex h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 pl-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-white [&>option]:bg-black [&>option]:text-white"
                                 >
-                                    <option value="">Select your region</option>
-                                    {REGIONS.map((r) => (
-                                        <option key={r} value={r}>
-                                            {r}
+                                    <option value="">Select your country</option>
+                                    {COUNTRIES.map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
                                         </option>
                                     ))}
                                 </select>

@@ -11,10 +11,12 @@ function DashboardShellInner({
   children,
   userName,
   userEmail,
+  credits,
 }: {
   children: React.ReactNode
   userName: string
   userEmail: string
+  credits: number
 }) {
   const pathname = usePathname()
   const { width } = useSidebar()
@@ -33,7 +35,7 @@ function DashboardShellInner({
         animate={{ marginLeft: width }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        <AppNavbar userName={userName} userEmail={userEmail} />
+        <AppNavbar userName={userName} userEmail={userEmail} credits={credits} />
         <main className="flex-1 p-6">{children}</main>
       </motion.div>
     </>
@@ -44,14 +46,15 @@ interface DashboardShellProps {
   children: React.ReactNode
   userName: string
   userEmail: string
+  credits?: number
   showOnboarding?: boolean
 }
 
 
-export function DashboardShell({ children, userName, userEmail, showOnboarding = false }: DashboardShellProps) {
+export function DashboardShell({ children, userName, userEmail, credits = 0, showOnboarding = false }: DashboardShellProps) {
   return (
     <SidebarProvider>
-      <DashboardShellInner userName={userName} userEmail={userEmail}>
+      <DashboardShellInner userName={userName} userEmail={userEmail} credits={credits}>
         {children}
       </DashboardShellInner>
       <LiquidGlassBubble

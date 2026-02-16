@@ -16,15 +16,18 @@ from schemas import (
     GenerateSimulationResponse, 
     SimulationOutput,
     ProjectChatRequest,
-    ProjectChatRequest,
     CodeReviewRequest,
-    ChatAnalysisRequest
+    InterviewChatRequest,
+    InterviewFeedbackRequest,
+    ChatAnalysisRequest,
+    RepoRequest
 )
 from llm_service import (
     generate_simulation_content, 
     generate_chat_response, 
-    generate_chat_response, 
     generate_code_review,
+    generate_interview_chat,
+    generate_interview_feedback,
     generate_chat_analysis
 )
 from repo_service import repo_service
@@ -178,6 +181,23 @@ async def code_review(req: CodeReviewRequest):
         print(f"Review Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/interview/chat")
+async def interview_chat(req: InterviewChatRequest):
+    try:
+        return generate_interview_chat(req)
+    except Exception as e:
+        print(f"Interview Chat Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/interview/feedback")
+async def interview_feedback(req: InterviewFeedbackRequest):
+    try:
+        return generate_interview_feedback(req)
+    except Exception as e:
+        print(f"Interview Feedback Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/analyze-chat")
 async def analyze_chat(req: ChatAnalysisRequest):
     try:
@@ -295,6 +315,4 @@ async def init_session(request: InitSessionRequest):
 async def get_session(session_id: str):
     files = await run_in_threadpool(repo_service.get_session_files, session_id)
     return {"files": files}
-
-
 

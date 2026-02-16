@@ -1,5 +1,20 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import asyncio
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from schemas import (
+    SimulationOutput, 
+    ProjectChatRequest, 
+    CodeReviewRequest, 
+    InterviewChatRequest, 
+    InterviewFeedbackRequest,
+    ChatAnalysisRequest,
+    ChatAnalysisResponse
+)
+from constants import get_level_description
 
 # Lazy imports applied throughout to improve startup time
 
@@ -349,7 +364,140 @@ Provide feedback and end with APPROVED or NOT_APPROVED."""
         
     return {"feedback": feedback, "approved": approved}
 
-def generate_chat_analysis(req):
+# --- Interviewer Logic ---
+
+def _interviewer_system_prompt(req: InterviewChatRequest) -> str:
+    """
+    Generates the system prompt for the AI Interviewer.
+    The persona is a professional Technical Interviewer.
+    """
+    lang = req.language
+    
+    # Base persona and context
+    role_en = "You are a Senior Technical Interviewer at a top-tier tech company."
+    role_ar = "أنت محاور تقني أول في شركة تقنية رائدة."
+    
+    style_en = """
+    - Your goal is to assess the candidate's soft skills, technical depth, and cultural fit based on the Job Description provided.
+    - BE PROFESSIONAL but natural. Do not sound robotic.
+    - **SILENT NOTE TAKING**: As you chat, internally track what they do well and poorly. You will be asked for a report later.
+    - If the user sends an image, analyze their non-verbal cues (eye contact, posture, lighting, dress code) and incorporate that into your feedback or next question subtly (e.g., "I noticed you look quite relaxed...").
+    - Ask ONE question at a time.
+    - Start with a polite introduction if history is empty.
+    - Dig deeper if their answer is vague.
+    """
+    style_ar = """
+    - هدفك هو تقييم المهارات الشخصية والتقنية للمرتح بناءً على الوصف الوظيفي المقدم.
+    - كن محترفًا وطبيعيًا. تجنب النبرة الروبوتية.
+    - **ملاحظات صامتة**: أثناء الدردشة، تتبع داخليًا ما يفعلونه جيدًا وما يخطئون فيه. سيُطلب منك تقرير لاحقًا.
+    - إذا أرسل المستخدم صورة، حلل الإشارات غير اللفظية (التواصل البصري، الإضاءة، الملابس) وادمج ذلك في ردك أو سؤالك القادم بلطف.
+    - اسأل سؤالًا واحدًا فقط في كل مرة.
+    - ابدأ بمقدمة مهذبة إذا كانت المحادثة في بدايتها.
+    - اطلب تفاصيل أكثر إذا كانت إجابتهم غامضة.
+    """
+
+    job_context = ""
+    if req.job_description:
+        job_context = f"\n**Job Description Context:**\nThe candidate is applying for this role:\n{req.job_description}\n"
+    
+    constraint_en = "Respond ONLY as the interviewer. Do not break character."
+    constraint_ar = "رد بصفتك المحاور فقط. لا تخرج عن الشخصية."
+
+    if lang == "ar":
+        return f"{role_ar}\n{style_ar}\n{job_context}\n{constraint_ar}\nتحدث بالعربية."
+    
+    return f"{role_en}\n{style_en}\n{job_context}\n{constraint_en}\nSpeak in English."
+
+
+def generate_interview_chat(req: InterviewChatRequest) -> dict:
+    """
+    Generates a response from the AI Interviewer. 
+    Supports multimodal input (text + image) using Gemini 1.5 Flash.
+    """
+    # Use Flash for speed and multimodal capabilities
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.7)
+    
+    system_prompt = _interviewer_system_prompt(req)
+    messages = [SystemMessage(content=system_prompt)]
+    
+    # Add history
+    for m in req.messages:
+        if m.role == "user":
+            messages.append(HumanMessage(content=m.content))
+        else:
+            messages.append(AIMessage(content=m.content))
+            
+    # Handle the latest turn (Text + Vision)
+    if req.image_base64:
+        image_content = [
+            {"type": "text", "text": "(Video frame of the candidate)"}, # Context for the model
+            {
+                "type": "image_url", 
+                "image_url": {"url": f"data:image/jpeg;base64,{req.image_base64}"}
+            }
+        ]
+        messages.append(HumanMessage(content=image_content))
+
+    if len(messages) == 1: # Only system prompt
+        messages.append(HumanMessage(content="Hello, I am ready. Please start the interview."))
+
+    response = llm.invoke(messages)
+    return {"reply": response.content}
+
+
+def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
+    """
+    Generates a final feedback report based on the interview history.
+    """
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.5)
+    
+    lang = req.language
+    job_context = f"Job Description: {req.job_description}"
+    
+    prompt_en = """
+    Analyze the interview transcript above. You have been observing this candidate.
+    Provide a structured feedback report in Markdown format.
+    
+    Sections required:
+    1. **Overall Score**: X/10 (be strict but fair).
+    2. **What Went Well**: Bullet points of strengths.
+    3. **Areas for Improvement**: Constructive criticism on answers or soft skills.
+    4. **Communication Style**: Feedback on clarity, confidence, and professionalism.
+    5. **Technical Accuracy**: If technical questions were asked, rate the accuracy.
+    
+    Tone: Professional, constructive, mentoring.
+    """
+    
+    prompt_ar = """
+    حلل نص المقابلة أعلاه. لقد كنت تراقب هذا المرشح.
+    قدم تقرير تقييم منظم بتنسيق Markdown.
+    
+    الأقسام المطلوبة:
+    1. **النتيجة الإجمالية**: X/10 (كن صارمًا ولكن عادلاً).
+    2. **نقاط القوة**: نقاط نقطية لما فعلوه جيدًا.
+    3. **مجالات التحسين**: نقد بناء حول الإجابات أو المهارات الشخصية.
+    4. **أسلوب التواصل**: تعليقات حول الوضوح، الثقة، والاحترافية.
+    5. **الدقة التقنية**: إذا طُرحت أسئلة تقنية، قيم دقتها.
+    
+    النبرة: احترافية، بناءة، توجيهية.
+    """
+    
+    final_instruction = prompt_ar if lang == "ar" else prompt_en
+    
+    messages = [
+        SystemMessage(content=f"You are an Interview Evaluator. {job_context}"),
+    ]
+    
+    for m in req.messages:
+        role_label = "Interviewer" if m.role == "assistant" else "Candidate"
+        messages.append(HumanMessage(content=f"{role_label}: {m.content}"))
+        
+    messages.append(HumanMessage(content=f"\n\n---\n{final_instruction}"))
+    
+    response = llm.invoke(messages)
+    return {"report": response.content}
+
+def generate_chat_analysis(req: ChatAnalysisRequest):
     """Analyzes chat history to evaluate soft and technical skills."""
     llm = _get_llm(temperature=0.3)
     structured_llm = llm.with_structured_output(ChatAnalysisResponse)

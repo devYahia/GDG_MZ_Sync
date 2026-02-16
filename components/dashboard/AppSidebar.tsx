@@ -12,6 +12,7 @@ import {
   ChevronRight,
   BookOpen,
   Target,
+  Mic,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban, exact: false },
   { href: "/dashboard/progress", label: "My Progress", icon: Target, exact: false },
   { href: "/dashboard/resources", label: "Resources", icon: BookOpen, exact: false },
+  { href: "/dashboard/interview", label: "Interview Practice", icon: Mic, exact: false },
 ]
 
 const bottomItems = [

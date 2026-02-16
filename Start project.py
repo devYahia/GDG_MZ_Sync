@@ -20,9 +20,9 @@ def start_servers():
 
     try:
         # Start Backend (FastAPI)
-        print("📡 Starting Backend (FastAPI) on port 8000...")
+        print("📡 Starting Backend (FastAPI) on port 8001...")
         backend_process = subprocess.Popen(
-            [venv_python, "-m", "uvicorn", "main:app", "--reload", "--port", "8000"],
+            [venv_python, "-m", "uvicorn", "main:app", "--reload", "--port", "8001"],
             cwd=backend_dir,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
         )

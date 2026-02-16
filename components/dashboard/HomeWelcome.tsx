@@ -38,29 +38,7 @@ export function HomeWelcome({ userName, fieldKey, experienceLevel }: HomeWelcome
               {firstName}
             </span>
           </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Career Track:</span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold",
-                  fieldConfig.bg,
-                  fieldConfig.color,
-                  "border-current/20 shadow-sm"
-                )}
-              >
-                <FieldIcon className="h-3.5 w-3.5" />
-                {fieldConfig.label}
-              </span>
-            </div>
-            <div className="h-4 w-px bg-border mx-1 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Level:</span>
-              <span className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
-                {levelLabels[experienceLevel] ?? experienceLevel}
-              </span>
-            </div>
-          </div>
+
         </div>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

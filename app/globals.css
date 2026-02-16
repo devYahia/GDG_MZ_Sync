@@ -186,6 +186,16 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-neutral-200 to-neutral-400;
   }
+
+  @keyframes progress {
+    from {
+      width: 0%;
+    }
+
+    to {
+      width: 100%;
+    }
+  }
 }
 
 /* Hide Unicorn Studio Badge -- blanket rule */
@@ -195,8 +205,8 @@ a[href*="unicornstudio"],
 div[class*="us-badge"],
 div[class*="unicorn"],
 [data-us-badge],
-[id^="unicorn-"] > a,
-[id^="unicorn-"] > div:not(:first-child):not([style*="inset"]) {
+[id^="unicorn-"]>a,
+[id^="unicorn-"]>div:not(:first-child):not([style*="inset"]) {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;

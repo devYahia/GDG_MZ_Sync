@@ -4,6 +4,9 @@ e2b-code-interpreter == 2.4.1
 python-dotenv == 1.2.1
 langchain-google-genai == 4.2.0
 langchain == 1.2.10
+sse_starlette == 3.2.0
+daytona == 0.143.0
+
 
 
 

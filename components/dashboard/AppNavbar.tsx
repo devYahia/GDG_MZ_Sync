@@ -87,7 +87,7 @@ export function AppNavbar({ userName, userEmail }: AppNavbarProps) {
                     <p className="text-sm font-medium text-foreground">{userName}</p>
                     <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
                   </div>
-                  <Link href="/dashboard" onClick={() => setUserMenuOpen(false)}>
+                  <Link href="/profile" onClick={() => setUserMenuOpen(false)}>
                     <span className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground">
                       <User className="h-4 w-4" />
                       Profile

@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
-import { Play, Loader2, CheckCircle, XCircle, Terminal, FileCode, ChevronUp, ChevronDown } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Play, Loader2, CheckCircle, XCircle, Terminal, FileCode, ChevronUp, ChevronDown, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { postCodeReview, type ChatLanguage } from "@/lib/api"
@@ -36,6 +36,7 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
     code,
     setCode,
     getPrimaryCode,
+    sessionId,
   } = useProjectWorkspace()
 
   const [reviewLoading, setReviewLoading] = useState(false)
@@ -175,6 +176,12 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
               <span className="text-sm font-medium text-foreground truncate">{activeFileId}</span>
             </div>
             <div className="flex items-center gap-1">
+              <Link href={sessionId ? `/ide?session_id=${sessionId}` : "/ide"} target="_blank">
+                <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Full IDE
+                </Button>
+              </Link>
               <Button
                 size="sm"
                 variant="outline"

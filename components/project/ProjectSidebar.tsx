@@ -1,22 +1,27 @@
 "use client"
 
-import { FileText, MessageCircle, Users } from "lucide-react"
+import { FileText, MessageCircle, Users, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface SidebarItem {
     id: string
     label: string
-    type: "description" | "persona"
+    type: "description" | "persona" | "report"
     icon?: React.ReactNode
 }
 
-interface ProjectSidebarProps {
+export interface SidebarGroup {
+    title: string
     items: SidebarItem[]
+}
+
+interface ProjectSidebarProps {
+    groups: SidebarGroup[]
     activeId: string
     onSelect: (id: string) => void
 }
 
-export function ProjectSidebar({ items, activeId, onSelect }: ProjectSidebarProps) {
+export function ProjectSidebar({ groups, activeId, onSelect }: ProjectSidebarProps) {
     return (
         <div className="flex h-full w-full flex-col bg-muted/20 border-r border-border">
             {/* Sidebar Header */}
@@ -60,7 +65,7 @@ export function ProjectSidebar({ items, activeId, onSelect }: ProjectSidebarProp
             <div className="shrink-0 border-t border-border p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
                     <Users className="h-3 w-3" />
-                    <span>{items.filter(i => i.type === "persona").length} Personas</span>
+                    <span>Personas Active</span>
                 </div>
             </div>
         </div>

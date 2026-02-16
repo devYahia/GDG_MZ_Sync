@@ -2,7 +2,7 @@
 
 import { useTransition } from "react"
 import Link from "next/link"
-import { Loader2, Mail, Lock } from "lucide-react"
+import { Loader2, Mail, Lock, Terminal } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -39,11 +39,9 @@ export default function LoginPage() {
                     href="/"
                     className="mb-8 flex items-center justify-center gap-2 group"
                 >
-                    <span className="text-xl font-black tracking-tight font-logo">
-                        INTER<span className="text-purple-500">NA</span><span className="text-purple-500">.</span>
-                    </span>
-                    <span className="text-base font-bold tracking-tight font-logo">
-                        <span className="text-purple-500">V</span>IRTUAL
+                    <Terminal className="h-6 w-6 text-purple-500 transition-transform group-hover:scale-110" />
+                    <span className="text-xl font-bold tracking-tight font-logo">
+                        Interna<span className="text-purple-500">.</span> Virtual
                     </span>
                 </Link>
 

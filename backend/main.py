@@ -1,25 +1,47 @@
+import os
+import uuid
+from typing import Literal, Optional, Dict
+from typing import Literal, List, Optional
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel  # <--- CRITICAL FIX
 from supabase import create_client, Client
-import os
-from dotenv import load_dotenv
 
+# Application internal imports
 from schemas import (
     GenerateSimulationRequest, 
     GenerateSimulationResponse, 
     SimulationOutput,
     ProjectChatRequest,
-    CodeReviewRequest
+    CodeReviewRequest,
+    InterviewChatRequest,
+    InterviewFeedbackRequest,
+    ChatAnalysisRequest,
+    RepoRequest
 )
 from llm_service import (
     generate_simulation_content, 
     generate_chat_response, 
-    generate_code_review
+    generate_code_review,
+    generate_interview_chat,
+    generate_interview_feedback,
+    generate_chat_analysis
 )
+from repo_service import repo_service
+from daytona_service import daytona_service
+from schemas import RepoRequest
 import uuid
 
-# Load environment variables
-load_dotenv()
+# Load environment: backend/.env first, then project root .env.local and .env
+from pathlib import Path as _Path
+_backend_dir = _Path(__file__).resolve().parent
+_root = _backend_dir.parent
+load_dotenv(dotenv_path=_backend_dir / ".env")
+load_dotenv(dotenv_path=_root / ".env.local")
+load_dotenv(dotenv_path=_root / ".env")
 
 app = FastAPI()
 
@@ -47,60 +69,10 @@ if url and key:
 else:
     print("Warning: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found.")
 
-# Gemini
-gemini_api_key = os.environ.get("GEMINI_API_KEY")
-if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
+# Gemini API key is used by llm_service.py via GEMINI_API_KEY env var
 
 
-# --- Pydantic models for API ---
-
-class ChatMessage(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str
-
-
-class ProjectChatRequest(BaseModel):
-    project_id: str
-    project_title: str
-    project_description: str
-    client_persona: str
-    client_mood: str
-    messages: list[ChatMessage]
-    language: Literal["en", "ar"]
-    code_context: str | None = None
-
-
-class CodeReviewRequest(BaseModel):
-    project_id: str
-    project_title: str
-    project_description: str
-    code: str
-    language: str
-    language_hint: Literal["en", "ar"] | None = None
-
-
-# --- System prompts for Gemini ---
-
-def _customer_system_prompt(req: ProjectChatRequest) -> str:
-    code_block = ""
-    if req.code_context and req.code_context.strip():
-        code_block = f"\n\nCurrent code from the intern (you may reference specific lines or point out issues):\n```\n{req.code_context.strip()[:8000]}\n```"
-    lang = req.language
-    if lang == "ar":
-        return f"""أنت عميل محاكى في مشروع تدريب داخلي افتراضي. تجسد شخصية: {req.client_persona}. مزاجك: {req.client_mood}.
-المشروع: {req.project_title}
-الوصف: {req.project_description}
-{code_block}
-
-أجب دائماً بالعربية، بصفة هذا العميل. إذا وُجد كود، يمكنك التعليق على أجزاء منه أو طلب تعديلات. كن واقعياً."""
-    return f"""You are a simulated client in a virtual internship. Persona: {req.client_persona}. Mood: {req.client_mood}.
-Project: {req.project_title}
-Description: {req.project_description}
-{code_block}
-
-Always answer in English as this client. If code is provided, you may reference specific parts or ask for changes. Be realistic."""
-
+# --- System prompts (chat uses llm_service; review prompt below) ---
 
 def _review_system_prompt(req: CodeReviewRequest) -> str:
     hint = "Respond in Arabic when possible." if req.language_hint == "ar" else "Respond in English."
@@ -122,12 +94,18 @@ if not os.environ.get("GEMINI_API_KEY"):
 async def generate_simulation(request: GenerateSimulationRequest):
     # 1. Generate content using LLM
     try:
-        simulation_data: SimulationOutput = generate_simulation_content(
+        simulation_data: SimulationOutput = await generate_simulation_content(
             request.title, request.context, request.level
         )
     except Exception as e:
+        err_msg = str(e)
         print(f"LLM Generation Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini API quota exceeded (free tier is limited). Please try again in a few minutes or check https://ai.google.dev/gemini-api/docs/rate-limits",
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
     
     # 2. Save to Supabase
     dummy_user_id = str(uuid.uuid4()) 
@@ -202,3 +180,139 @@ async def code_review(req: CodeReviewRequest):
     except Exception as e:
         print(f"Review Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/interview/chat")
+async def interview_chat(req: InterviewChatRequest):
+    try:
+        return generate_interview_chat(req)
+    except Exception as e:
+        print(f"Interview Chat Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/interview/feedback")
+async def interview_feedback(req: InterviewFeedbackRequest):
+    try:
+        return generate_interview_feedback(req)
+    except Exception as e:
+        print(f"Interview Feedback Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/analyze-chat")
+async def analyze_chat(req: ChatAnalysisRequest):
+    try:
+        return generate_chat_analysis(req)
+    except Exception as e:
+        print(f"Analysis Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/repo/extract")
+async def extract_repo(request: RepoRequest):
+    # Offload the heavy work to the threadpool
+    result = await run_in_threadpool(
+        repo_service.clone_and_read, 
+        request.github_url, 
+        request.branch, 
+        request.access_token
+    )
+    
+    if not result or not result.get("files"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Connected, but no readable components found in this repository."
+        )
+
+    # Return a clear signal for your application logic
+    return {
+        "connected": True, 
+        "status": "success",
+        "message": "Repository components extracted successfully",
+        "file_count": len(result["files"]),
+        "files": result["files"],
+        "session_id": result["session_id"]
+    }
+
+class FileOperationRequest(BaseModel):
+    session_id: str
+    rel_path: str
+    content: Optional[str] = None
+
+@app.post("/api/repo/file/update")
+async def update_file(request: FileOperationRequest):
+    if request.content is None:
+        raise HTTPException(status_code=400, detail="Content required")
+    await run_in_threadpool(
+        repo_service.update_file,
+        request.session_id,
+        request.rel_path,
+        request.content
+    )
+    return {"status": "success"}
+
+@app.post("/api/repo/file/create")
+async def create_file(request: FileOperationRequest):
+    await run_in_threadpool(
+        repo_service.create_file,
+        request.session_id,
+        request.rel_path,
+        request.content or ""
+    )
+    return {"status": "success"}
+
+@app.delete("/api/repo/file/delete")
+async def delete_file(request: FileOperationRequest):
+    await run_in_threadpool(
+        repo_service.delete_file,
+        request.session_id,
+        request.rel_path
+    )
+    return {"status": "success"}
+
+class ExecuteRequest(BaseModel):
+    workspace_id: str
+    command: str
+
+@app.post("/api/repo/execute")
+async def execute_command(request: ExecuteRequest):
+    output = await run_in_threadpool(
+        daytona_service.execute_command,
+        request.workspace_id,
+        request.command
+    )
+    return {"output": output}
+
+class CreateWorkspaceRequest(BaseModel):
+    github_url: str
+    branch: Optional[str] = "main"
+
+@app.post("/api/repo/workspace")
+async def create_workspace(request: CreateWorkspaceRequest):
+    workspace = await run_in_threadpool(
+        daytona_service.create_workspace,
+        request.github_url,
+        request.branch
+    )
+    return workspace
+
+class InitSessionRequest(BaseModel):
+    files: Dict[str, str]
+
+@app.post("/api/repo/branches")
+async def list_branches(request: RepoRequest):
+    branches = await run_in_threadpool(
+        repo_service.list_branches,
+        request.github_url,
+        request.access_token
+    )
+    return {"branches": branches}
+
+@app.post("/api/repo/init")
+async def init_session(request: InitSessionRequest):
+    session_id = await run_in_threadpool(repo_service.create_session, request.files)
+    return {"session_id": session_id}
+
+@app.get("/api/repo/session/{session_id}")
+async def get_session(session_id: str):
+    files = await run_in_threadpool(repo_service.get_session_files, session_id)
+    return {"files": files}
+

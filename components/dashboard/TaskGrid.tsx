@@ -6,24 +6,27 @@ import { Sparkles, FolderKanban } from "lucide-react"
 
 import { TaskCard } from "@/components/dashboard/TaskCard"
 import { TaskFilters } from "@/components/dashboard/TaskFilters"
-import { TASKS, type TaskField } from "@/lib/tasks"
+import { TASKS, type TaskField, type TaskDifficulty } from "@/lib/tasks"
 
 export function TaskGrid() {
     const [selectedTracks, setSelectedTracks] = useState<TaskField[]>([])
+    const [selectedDifficulties, setSelectedDifficulties] = useState<TaskDifficulty[]>([])
     const [selectedLevels, setSelectedLevels] = useState<number[]>([])
     const [searchQuery, setSearchQuery] = useState("")
 
     const filteredTasks = useMemo(() => {
+        const st = Array.isArray(selectedTracks) ? selectedTracks : []
+        const sl = Array.isArray(selectedLevels) ? selectedLevels : []
         return TASKS.filter((task) => {
-            if (selectedTracks.length > 0 && !selectedTracks.includes(task.field)) return false
-            if (selectedLevels.length > 0 && !selectedLevels.includes(task.level)) return false
+            if (st.length > 0 && !st.includes(task.field)) return false
+            if (sl.length > 0 && !sl.includes(task.level)) return false
             if (searchQuery) {
                 const q = searchQuery.toLowerCase()
                 return (
-                    task.title.toLowerCase().includes(q) ||
-                    task.description.toLowerCase().includes(q) ||
-                    task.clientPersona.toLowerCase().includes(q) ||
-                    task.tools.some((t) => t.toLowerCase().includes(q))
+                    (task.title && task.title.toLowerCase().includes(q)) ||
+                    (task.description && task.description.toLowerCase().includes(q)) ||
+                    (task.clientPersona && task.clientPersona.toLowerCase().includes(q)) ||
+                    (Array.isArray(task.tools) && task.tools.some((t) => String(t).toLowerCase().includes(q)))
                 )
             }
             return true
@@ -44,9 +47,11 @@ export function TaskGrid() {
             </motion.div>
             <TaskFilters
                 selectedTracks={selectedTracks}
+                selectedDifficulties={selectedDifficulties}
                 selectedLevels={selectedLevels}
                 searchQuery={searchQuery}
                 onTracksChange={setSelectedTracks}
+                onDifficultiesChange={setSelectedDifficulties}
                 onLevelsChange={setSelectedLevels}
                 onSearchChange={setSearchQuery}
             />
@@ -62,7 +67,7 @@ export function TaskGrid() {
                         hidden: {},
                     }}
                 >
-                    {filteredTasks.map((task, i) => (
+                    {filteredTasks.map((task) => (
                         <motion.div
                             key={task.id}
                             layout

@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Sparkles, ArrowLeft, Loader2, Zap } from "lucide-react"
+import { Sparkles, ArrowLeft, Loader2, Zap, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { SimulationView } from "@/components/simulation-view"
 
 const LEVEL_LABELS: Record<string, string> = {
     L0: "Absolute Beginner",
@@ -66,6 +67,8 @@ export default function CreateSimulationPage() {
     const [context, setContext] = useState("")
     const [levelNum, setLevelNum] = useState(5)
     const [isLoading, setIsLoading] = useState(false)
+    /** After successful generation, show preview with this data (so user sees result instead of going back to form) */
+    const [generatedResult, setGeneratedResult] = useState<{ simulation_id: string; simulation_data: any } | null>(null)
 
     const levelKey = `L${levelNum}` as keyof typeof LEVEL_LABELS
 
@@ -82,34 +85,35 @@ export default function CreateSimulationPage() {
         }
 
         setIsLoading(true)
+        setGeneratedResult(null)
 
         try {
-            const response = await fetch("http://localhost:8000/generate-simulation", {
+            const response = await fetch("/api/generate-simulation", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title, context, level: levelKey }),
             })
 
-            if (!response.ok) {
-                throw new Error("Failed to generate simulation")
-            }
-
             const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data?.error || "Failed to generate simulation")
+            }
 
             toast({
                 title: "Success!",
-                description: "Your simulation has been generated.",
+                description: "Your simulation has been generated. Here’s the preview.",
             })
 
-            router.push(`/simulations/${data.simulation_id}`)
-
+            setGeneratedResult({
+                simulation_id: data.simulation_id,
+                simulation_data: data.simulation_data,
+            })
         } catch (error) {
             console.error("Generation error:", error)
             toast({
                 title: "Error",
-                description: "Something went wrong while generating the simulation.",
+                description: error instanceof Error ? error.message : "Something went wrong while generating the simulation.",
                 variant: "destructive"
             })
         } finally {
@@ -166,6 +170,51 @@ export default function CreateSimulationPage() {
                             Level {levelKey} • {LEVEL_LABELS[levelKey]}
                         </span>
                     </div>
+                </div>
+            </div>
+        )
+    }
+
+    // ── Preview (after successful generation) ──
+    if (generatedResult?.simulation_data) {
+        return (
+            <div className="min-h-screen bg-black text-white selection:bg-purple-500/30">
+                <div className="fixed inset-0 z-0">
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/90 pointer-events-none" />
+                </div>
+                <div className="relative z-10">
+                    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+                        <div className="flex flex-wrap items-center gap-4 mb-8">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-white/50 hover:text-white"
+                                onClick={() => setGeneratedResult(null)}
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to form
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-white/50 hover:text-white"
+                                onClick={() => router.push("/dashboard")}
+                            >
+                                Dashboard
+                            </Button>
+                            <div className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+                                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                                <span className="text-sm font-medium text-emerald-400">Simulation generated</span>
+                            </div>
+                            <Button
+                                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
+                                onClick={() => router.push(`/simulations/${generatedResult.simulation_id}`)}
+                            >
+                                Open full simulation
+                            </Button>
+                        </div>
+                        <SimulationView data={generatedResult.simulation_data} />
+                    </main>
                 </div>
             </div>
         )
@@ -247,6 +296,7 @@ export default function CreateSimulationPage() {
                                                 max={10}
                                                 value={levelNum}
                                                 onChange={(e) => setLevelNum(Number(e.target.value))}
+                                                aria-label="Simulation difficulty level"
                                                 className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 
                                                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer
                                                            [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"

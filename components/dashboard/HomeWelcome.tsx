@@ -38,22 +38,7 @@ export function HomeWelcome({ userName, fieldKey, experienceLevel }: HomeWelcome
               {firstName}
             </span>
           </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-                fieldConfig.bg,
-                fieldConfig.color,
-                "border-current/20"
-              )}
-            >
-              <FieldIcon className="h-3 w-3" />
-              {fieldConfig.label}
-            </span>
-            <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
-              {levelLabels[experienceLevel] ?? experienceLevel}
-            </span>
-          </div>
+
         </div>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

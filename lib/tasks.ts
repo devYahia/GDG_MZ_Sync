@@ -33,6 +33,7 @@ export const LEVEL_CONFIG: TaskLevel[] = [
     { levelNumber: 5, customerDifficulty: "hard", projectDifficulty: "medium", label: "Level 5 — Demanding client" },
     { levelNumber: 6, customerDifficulty: "medium", projectDifficulty: "hard", label: "Level 6 — Complex project" },
     { levelNumber: 7, customerDifficulty: "hard", projectDifficulty: "hard", label: "Level 7 — Full challenge" },
+    { levelNumber: 8, customerDifficulty: "hard", projectDifficulty: "hard", label: "Level 8 — Expert pressure" },
 ]
 
 export interface SimulationTask {
@@ -57,38 +58,38 @@ export const FIELD_CONFIG: Record<
     frontend: {
         label: "Frontend",
         icon: Code,
-        color: "text-blue-400",
-        bg: "bg-blue-400/10",
+        color: "text-blue-600 dark:text-blue-400",
+        bg: "bg-blue-500/10",
     },
     backend: {
         label: "Backend",
         icon: Server,
-        color: "text-green-400",
-        bg: "bg-green-400/10",
+        color: "text-green-600 dark:text-green-400",
+        bg: "bg-green-500/10",
     },
     fullstack: {
         label: "Full Stack",
         icon: Layers,
-        color: "text-purple-400",
-        bg: "bg-purple-400/10",
+        color: "text-purple-600 dark:text-purple-400",
+        bg: "bg-purple-500/10",
     },
     mobile: {
         label: "Mobile",
         icon: Smartphone,
-        color: "text-orange-400",
-        bg: "bg-orange-400/10",
+        color: "text-orange-600 dark:text-orange-400",
+        bg: "bg-orange-500/10",
     },
     data: {
         label: "Data / AI",
         icon: BarChart3,
-        color: "text-cyan-400",
-        bg: "bg-cyan-400/10",
+        color: "text-cyan-600 dark:text-cyan-400",
+        bg: "bg-cyan-500/10",
     },
     design: {
         label: "Design",
         icon: Palette,
-        color: "text-pink-400",
-        bg: "bg-pink-400/10",
+        color: "text-pink-600 dark:text-pink-400",
+        bg: "bg-pink-500/10",
     },
 }
 
@@ -228,6 +229,20 @@ export const TASKS: SimulationTask[] = [
         level: 6,
         duration: "55 min",
         tools: ["Python", "Pandas", "SQL"],
+    },
+    {
+        id: "legacy-migration",
+        title: "Legacy System Migration",
+        description:
+            "A stressed CTO needs a migration plan from a legacy monolith to microservices. Tight deadlines, unclear priorities, and multiple stakeholders with conflicting demands.",
+        clientPersona: "Overwhelmed CTO",
+        clientMood: "Under pressure",
+        field: "fullstack",
+        difficulty: "hard",
+        customerDifficulty: "hard",
+        level: 8,
+        duration: "60 min",
+        tools: ["Architecture", "APIs", "Documentation"],
     },
     {
         id: "mobile-auth-ui",

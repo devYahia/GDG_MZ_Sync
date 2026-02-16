@@ -18,15 +18,10 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
-  // if (!profile || !profile.onboarding_completed) redirect("/signup") // Removed redirect to allow bubble flow
-
-  if (!profile) redirect("/signup")
-
   return (
     <DashboardShell
-      userName={profile.full_name}
+      userName={profile?.full_name ?? user.email ?? "Developer"}
       userEmail={user.email ?? ""}
-      showOnboarding={!profile.onboarding_completed}
     >
       {children}
     </DashboardShell>

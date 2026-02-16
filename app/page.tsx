@@ -1,9 +1,12 @@
 "use client"
 
 import { GradientButton } from "@/components/ui/gradient-button"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { motion, useScroll, useTransform } from "motion/react"
 import { Features } from "@/components/landing/Features"
+import { Pricing } from "@/components/landing/Pricing"
+import { FAQ } from "@/components/landing/FAQ"
+import { ContactCTA } from "@/components/landing/ContactCTA"
 import { HeroMonitor } from "@/components/landing/HeroMonitor"
 import UnicornScene from "unicornstudio-react/next"
 import { useEffect, useState } from "react"
@@ -19,6 +22,68 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true)
+
+    // Nuclear badge removal -- the SDK injects an element inside the scene container
+    const removeBadge = () => {
+      // Strategy 1: Find all elements in the page and hide badge-like ones
+      document.querySelectorAll("*").forEach(el => {
+        const htmlEl = el as HTMLElement
+        const style = window.getComputedStyle(htmlEl)
+        const text = (htmlEl.textContent || "").toLowerCase()
+        const href = (htmlEl as HTMLAnchorElement).href?.toLowerCase() || ""
+
+        // Match by text content
+        const isTextMatch = text.includes("unicorn") || (text.includes("made with") && text.length < 80)
+        // Match by href
+        const isHrefMatch = href.includes("unicorn.studio") || href.includes("unicornstudio")
+        // Match by position: fixed/absolute at bottom with small height (badge-like)
+        const isBadgePosition = (style.position === "fixed" || style.position === "absolute") &&
+          parseInt(style.bottom) >= 0 && parseInt(style.bottom) <= 40 &&
+          htmlEl.offsetHeight > 0 && htmlEl.offsetHeight < 60 &&
+          htmlEl.tagName !== "SECTION" && htmlEl.tagName !== "NAV" &&
+          !htmlEl.closest("footer") &&
+          !htmlEl.id?.includes("__next")
+
+        if (isTextMatch || isHrefMatch || (isBadgePosition && htmlEl.querySelector("svg, img"))) {
+          htmlEl.remove()
+        }
+      })
+
+      // Strategy 2: Target elements inside any unicorn scene container specifically
+      document.querySelectorAll("[id^='unicorn-']").forEach(container => {
+        // The SDK adds canvas + badge. Keep canvas, remove everything else non-essential
+        container.querySelectorAll("a, div:not([style*='position'])").forEach(child => {
+          const text = (child.textContent || "").toLowerCase()
+          if (text.includes("unicorn") || text.includes("made with")) {
+            (child as HTMLElement).remove()
+          }
+        })
+        // Also target any child with position absolute/fixed at bottom
+        container.querySelectorAll("*").forEach(child => {
+          const s = window.getComputedStyle(child as HTMLElement)
+          if ((s.position === "absolute" || s.position === "fixed") && child.tagName !== "CANVAS") {
+            const bottom = parseInt(s.bottom)
+            if (!isNaN(bottom) && bottom >= 0 && bottom <= 30) {
+              (child as HTMLElement).remove()
+            }
+          }
+        })
+      })
+    }
+
+    // Run at multiple intervals to catch late SDK injection
+    const timers = [200, 500, 1000, 2000, 3000, 5000, 8000].map(ms => setTimeout(removeBadge, ms))
+
+    // Watch for any DOM changes
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(removeBadge)
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    return () => {
+      timers.forEach(clearTimeout)
+      observer.disconnect()
+    }
   }, [])
 
   return (
@@ -83,6 +148,8 @@ export default function LandingPage() {
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/15 rounded-full blur-[100px] pointer-events-none" />
         </div>
+        {/* Opaque cover for SDK watermark -- sits above everything at the bottom of hero */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-black z-[9999] pointer-events-none" />
 
         <motion.div
           style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
@@ -91,16 +158,6 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             {/* Left Column */}
             <div className="flex flex-col gap-8 text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 w-fit mx-auto lg:mx-0"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                <span className="text-xs font-medium text-white/80">AI-driven internship simulator</span>
-              </motion.div>
-
               <motion.h1
                 initial={{ opacity: 0, y: 28 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -187,40 +244,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section id="pricing" className="relative z-10 py-32 overflow-hidden border-t border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-black to-black pointer-events-none" />
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="container mx-auto px-6 text-center relative max-w-4xl"
-        >
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-            Ready to transform?
-          </h2>
-          <p className="text-white/60 max-w-xl mx-auto mb-10 text-lg">
-            Join developers building the future with our advanced toolkit.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup">
-              <motion.span whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                <GradientButton className="w-full sm:w-auto h-14 px-10 text-lg rounded-xl">
-                  Start building now
-                </GradientButton>
-              </motion.span>
-            </Link>
-            <motion.a
-              href="#"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="text-white/60 hover:text-white transition-colors text-lg font-medium"
-            >
-              Contact sales
-            </motion.a>
-          </div>
-        </motion.div>
+      {/* Pricing Section */}
+      <section id="pricing" className="relative z-10 py-32 bg-black border-t border-white/5">
+        <Pricing />
+      </section>
+
+      {/* FAQ Section */}
+      <section className="relative z-10 py-32 bg-black border-t border-white/5">
+        <FAQ />
+      </section>
+
+      {/* CTA + Social + Contact Section */}
+      <section id="about" className="relative z-10 py-32 overflow-hidden border-t border-white/5">
+        <ContactCTA />
       </section>
 
       {/* Footer */}

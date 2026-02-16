@@ -13,7 +13,11 @@ const authSchema = z.object({
     password: z
         .string()
         .min(6, "Password must be at least 6 characters")
-        .max(72, "Password must be at most 72 characters"),
+        .max(72, "Password must be at most 72 characters")
+        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+        .regex(/[0-9]/, "Password must contain at least one number")
+        .regex(/[!@#$%^&*()_+\-=\[\]{};':"|\<\>?,./`~]/, "Password must contain at least one special character"),
 })
 
 const signupSchema = authSchema
@@ -24,6 +28,14 @@ const signupSchema = authSchema
             .min(2, "Name must be at least 2 characters")
             .max(100, "Name is too long"),
         region: z.string().min(2, "Region is required"),
+        field: z.enum([
+            "frontend",
+            "backend",
+            "fullstack",
+            "mobile",
+            "data",
+            "design",
+        ]),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords don't match",
@@ -87,6 +99,7 @@ export async function signup(data: {
     confirmPassword: string
     fullName: string
     region: string
+    field: string
 }): Promise<AuthResult> {
     const validated = signupSchema.safeParse(data)
     if (!validated.success) {
@@ -95,71 +108,52 @@ export async function signup(data: {
 
     const supabase = await createClient()
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase.auth.getUser()
-    if (existingUser?.user) {
-        return { error: "You are already logged in. Please sign out first." }
-    }
-
-    // Create user account directly with password
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // Sign up the user (email confirmation is disabled via DB trigger)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: validated.data.email,
         password: validated.data.password,
         options: {
-            emailRedirectTo: undefined,
             data: {
                 full_name: validated.data.fullName,
                 region: validated.data.region,
+                field: validated.data.field,
             },
         },
     })
 
-    if (authError) {
-        return { error: authError.message }
-    }
-
-    if (!authData.user) {
-        return { error: "Failed to create account. Please try again." }
-    }
-
-    // Check if this user already has a profile
-    const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id, onboarding_completed")
-        .eq("id", authData.user.id)
-        .single()
-
-    if (existingProfile) {
-        // Profile already exists - check if onboarding is complete
-        if (existingProfile.onboarding_completed) {
-            return { error: "Account already exists. Please sign in instead." }
+    if (signUpError) {
+        if (signUpError.message.includes("already registered")) {
+            return { error: "An account with this email already exists. Please sign in instead." }
         }
-        // Profile exists but onboarding incomplete - let them continue
-        return { success: "Account created successfully!" }
+        return { error: signUpError.message }
     }
 
-    // Create profile for new user using upsert
-    const { error: profileError } = await supabase.from("profiles").upsert({
-        id: authData.user.id,
-        full_name: validated.data.fullName,
-        region: validated.data.region,
-        field: "frontend", // placeholder, updated in onboarding
-        experience_level: "student", // placeholder
-        interests: [],
-        onboarding_completed: false,
-    }, {
-        onConflict: "id"
+    // Auto-login immediately after signup (no email verification needed)
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: validated.data.email,
+        password: validated.data.password,
     })
 
-    if (profileError) {
-        console.error("Profile creation error:", profileError)
-        return { error: "Account created but profile setup failed. Please contact support." }
+    if (loginError) {
+        // Signup succeeded but auto-login failed -- still a success, user can login manually
+        return { success: "Account created! Please sign in with your credentials." }
     }
 
-    // Revalidate to ensure session is picked up
-    revalidatePath("/", "layout")
+    // Create profile if it doesn't exist
+    if (signUpData.user) {
+        await supabase.from("profiles").upsert({
+            id: signUpData.user.id,
+            full_name: validated.data.fullName,
+            region: validated.data.region,
+            field: validated.data.field || "frontend",
+            experience_level: "student",
+            interests: [],
+            onboarding_completed: false,
+        }, { onConflict: "id" })
+    }
 
-    return { success: "Account created successfully!" }
+    revalidatePath("/", "layout")
+    redirect("/dashboard")
 }
 
 

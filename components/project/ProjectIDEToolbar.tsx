@@ -22,6 +22,8 @@ const GITHUB_DOCS = "https://docs.github.com/en/authentication/keeping-your-acco
 interface ProjectIDEToolbarProps {
   projectTitle: string
   code: string
+  /** When provided, push all files to GitHub (otherwise single solution.js) */
+  files?: Record<string, string>
   notifyOnSubmit: boolean
   setNotifyOnSubmit: (v: boolean) => void
   webhookUrl: string
@@ -31,6 +33,7 @@ interface ProjectIDEToolbarProps {
 export function ProjectIDEToolbar({
   projectTitle,
   code,
+  files,
   notifyOnSubmit,
   setNotifyOnSubmit,
   webhookUrl,
@@ -56,6 +59,7 @@ export function ProjectIDEToolbar({
           branch: branch.trim(),
           commitMessage: `Interna: ${projectTitle}`,
           code,
+          ...(files && Object.keys(files).length > 1 ? { files } : {}),
           projectTitle,
           accessToken: token.trim(),
         }),

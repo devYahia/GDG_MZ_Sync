@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Review Agent</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #58a6ff;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: #8b949e;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 820px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Input ── */
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    #repoInput {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #repoInput:focus { border-color: #58a6ff; }
+    #repoInput::placeholder { color: #484f58; }
+
+    #reviewBtn {
+      background: #238636;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px 24px;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    #reviewBtn:hover:not(:disabled) { background: #2ea043; }
+    #reviewBtn:active:not(:disabled) { transform: scale(0.97); }
+    #reviewBtn:disabled { background: #1f2937; color: #6b7280; cursor: not-allowed; }
+
+    /* ── Progress panel ── */
+    #progressPanel { display: none; }
+
+    .panel-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+
+    #stepList {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    #stepList::-webkit-scrollbar { width: 4px; }
+    #stepList::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+    .step-item.step    { background: #1c2128; color: #8b949e; }
+    .step-item.file    { background: #1c2128; color: #79c0ff; }
+    .step-item.execute { background: #1c2128; color: #a5f3ab; }
+    .step-item.lint    { background: #1c2128; color: #f9c513; }
+    .step-item.error   { background: #2d1b1b; color: #f87171; }
+    .step-item.done    { background: #1a2d1a; color: #56d364; font-weight: 600; }
+
+    .step-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Report panel ── */
+    #reportPanel { display: none; }
+
+    #reportContent {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 28px;
+      line-height: 1.7;
+      font-size: 0.92rem;
+    }
+
+    /* Markdown styling */
+    #reportContent h1 { font-size: 1.5rem; color: #58a6ff; margin-bottom: 8px; }
+    #reportContent h2 { font-size: 1.1rem; color: #e6edf3; margin: 24px 0 10px; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+    #reportContent h3 { font-size: 0.98rem; color: #cdd9e5; margin: 20px 0 8px; }
+    #reportContent p  { color: #8b949e; margin-bottom: 10px; }
+    #reportContent ul, #reportContent ol { padding-left: 20px; color: #8b949e; margin-bottom: 10px; }
+    #reportContent li { margin-bottom: 4px; }
+    #reportContent strong { color: #e6edf3; }
+    #reportContent code { background: #1c2128; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #79c0ff; }
+    #reportContent hr { border: none; border-top: 1px solid #30363d; margin: 20px 0; }
+
+    /* PASS / WARN / FAIL badges */
+    #reportContent h3 { position: relative; }
+
+    .badge-pass  { background: #1a3a1a; color: #56d364; border: 1px solid #238636; border-radius: 4px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }
+    .badge-warn  { background: #2d2200; color: #f9c513; border: 1px solid #b08800; border-radius: 4px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }
+    .badge-fail  { background: #2d1010; color: #f87171; border: 1px solid #8b0000; border-radius: 4px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }
+
+    .report-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .download-btn {
+      background: #1f2937;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      transition: all 0.2s;
+    }
+
+    .download-btn:hover { background: #30363d; color: #e6edf3; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🤖 Code Review Agent</h1>
+    <p>Paste a GitHub repo URL — the agent will clone, execute, lint, and review every file.</p>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <div class="input-row">
+      <input
+        id="repoInput"
+        type="text"
+        placeholder="https://github.com/owner/repo"
+        value=""
+      />
+      <button id="reviewBtn" onclick="startReview()">▶ Run Review</button>
+    </div>
+  </div>
+
+  <!-- Progress card -->
+  <div class="card" id="progressPanel">
+    <div class="panel-title">Live Progress</div>
+    <ul id="stepList"></ul>
+  </div>
+
+  <!-- Report card -->
+  <div class="card" id="reportPanel">
+    <div class="panel-title">Code Review Report</div>
+    <div id="reportContent"></div>
+    <div class="report-actions">
+      <button class="download-btn" onclick="downloadReport()">⬇ Download .md</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:8000";
+    let rawReport  = "";
+    let eventSource = null;
+
+    const STEP_ICONS = {
+      step:    "⚙️",
+      file:    "📄",
+      execute: "▶️",
+      lint:    "🔍",
+      error:   "❌",
+      done:    "✅",
+      report:  "📋",
+    };
+
+    function addStep(type, message) {
+      const list = document.getElementById("stepList");
+
+      // Remove spinner if present
+      const spinner = list.querySelector(".spinner-item");
+      if (spinner) spinner.remove();
+
+      const li = document.createElement("li");
+      li.className = `step-item ${type}`;
+      li.innerHTML = `<span class="step-icon">${STEP_ICONS[type] || "•"}</span><span>${message}</span>`;
+      list.appendChild(li);
+
+      // Add new spinner at bottom (unless done/error)
+      if (type !== "done" && type !== "error" && type !== "report") {
+        const spin = document.createElement("li");
+        spin.className = "step-item step spinner-item";
+        spin.innerHTML = `<span class="spinner"></span><span style="color:#484f58">Working...</span>`;
+        list.appendChild(spin);
+      }
+
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function renderReport(markdown) {
+      rawReport = markdown;
+      const panel  = document.getElementById("reportPanel");
+      const content = document.getElementById("reportContent");
+
+      // Parse markdown
+      let html = marked.parse(markdown);
+
+      // Colour PASS / WARN / FAIL badges
+      html = html
+        .replace(/\[PASS\]/g, '<span class="badge-pass">PASS</span>')
+        .replace(/\[WARN\]/g, '<span class="badge-warn">WARN</span>')
+        .replace(/\[FAIL\]/g, '<span class="badge-fail">FAIL</span>');
+
+      content.innerHTML = html;
+      panel.style.display = "block";
+      panel.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function downloadReport() {
+      const blob = new Blob([rawReport], { type: "text/markdown" });
+      const a    = document.createElement("a");
+      a.href     = URL.createObjectURL(blob);
+      a.download = "code_review_report.md";
+      a.click();
+    }
+
+    async function startReview() {
+      const url = document.getElementById("repoInput").value.trim();
+      if (!url.startsWith("http")) {
+        alert("Please enter a valid GitHub URL starting with https://");
+        return;
+      }
+
+      // Reset UI
+      document.getElementById("stepList").innerHTML   = "";
+      document.getElementById("reportPanel").style.display = "none";
+      document.getElementById("progressPanel").style.display = "block";
+      document.getElementById("reviewBtn").disabled   = true;
+      document.getElementById("reviewBtn").textContent = "⏳ Running...";
+      rawReport = "";
+
+      if (eventSource) { eventSource.close(); }
+
+      try {
+        // 1. POST /review → get job_id
+        const res = await fetch(`${API_BASE}/review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ repo_url: url }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          addStep("error", err.detail || "Failed to start review");
+          resetBtn();
+          return;
+        }
+
+        const { job_id, stream_url } = await res.json();
+        addStep("step", `🚀 Review started (job: ${job_id.slice(0, 8)}…)`);
+
+        // 2. GET /review/{job_id} → SSE stream
+        eventSource = new EventSource(`${API_BASE}${stream_url}`);
+
+        const STREAM_EVENTS = ["step", "file", "execute", "lint", "error", "done", "report"];
+
+        STREAM_EVENTS.forEach(eventType => {
+          eventSource.addEventListener(eventType, (e) => {
+            const payload = JSON.parse(e.data);
+
+            if (eventType === "report") {
+              // Remove spinner
+              const spinner = document.getElementById("stepList").querySelector(".spinner-item");
+              if (spinner) spinner.remove();
+              addStep("report", "📋 Report generated");
+              renderReport(payload.data);
+            } else if (eventType === "done") {
+              addStep("done", payload.message || "Review complete");
+              resetBtn();
+              eventSource.close();
+            } else if (eventType === "error") {
+              addStep("error", payload.message || "An error occurred");
+              resetBtn();
+              eventSource.close();
+            } else {
+              addStep(eventType, payload.message);
+            }
+          });
+        });
+
+        eventSource.onerror = () => {
+          addStep("error", "Connection lost");
+          resetBtn();
+          eventSource.close();
+        };
+
+      } catch (err) {
+        addStep("error", `Network error: ${err.message}`);
+        resetBtn();
+      }
+    }
+
+    function resetBtn() {
+      const btn = document.getElementById("reviewBtn");
+      btn.disabled  = false;
+      btn.textContent = "▶ Run Review";
+      // Remove spinner
+      const spinner = document.getElementById("stepList").querySelector(".spinner-item");
+      if (spinner) spinner.remove();
+    }
+
+    // Allow pressing Enter in the input
+    document.getElementById("repoInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") startReview();
+    });
+  </script>
+</body>
+</html>

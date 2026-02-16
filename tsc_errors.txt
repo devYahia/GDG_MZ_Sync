@@ -1,0 +1,9 @@
+app/(dashboard)/dashboard/mentor/page.tsx(29,5): error TS2531: Object is possibly 'null'.
+components/dashboard/TaskFilters.tsx(34,5): error TS2339: Property 'selectedDifficulties' does not exist on type 'TaskFiltersProps'.
+components/dashboard/TaskGrid.tsx(50,17): error TS2322: Type '{ selectedTracks: TaskField[]; selectedDifficulties: TaskDifficulty[]; selectedLevels: number[]; searchQuery: string; onTracksChange: Dispatch<SetStateAction<TaskField[]>>; onDifficultiesChange: Dispatch<...>; onLevelsChange: Dispatch<...>; onSearchChange: Dispatch<...>; }' is not assignable to type 'IntrinsicAttributes & TaskFiltersProps'.
+  Property 'selectedDifficulties' does not exist on type 'IntrinsicAttributes & TaskFiltersProps'.
+components/project/ProjectChat.tsx(152,21): error TS2322: Type '{ children: string; remarkPlugins: ((options?: Options | null | undefined) => undefined)[]; className: string; components: { ul: ({ node, ...props }: ClassAttributes<HTMLUListElement> & HTMLAttributes<...> & ExtraProps) => Element; ... 7 more ...; blockquote: ({ node, ...props }: ClassAttributes<...> & ... 1 more .....' is not assignable to type 'IntrinsicAttributes & Readonly<Options>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & Readonly<Options>'.
+components/project/ProjectIDE.tsx(52,29): error TS2304: Cannot find name 'useTheme'.
+components/project/ProjectSidebar.tsx(36,18): error TS2304: Cannot find name 'items'.
+components/project/ProjectSidebar.tsx(36,29): error TS7006: Parameter 'item' implicitly has an 'any' type.

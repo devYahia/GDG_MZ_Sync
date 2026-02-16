@@ -7,45 +7,51 @@ import {
   LayoutDashboard,
   FolderKanban,
   User,
-  Settings,
+  LogOut,
   ChevronLeft,
   ChevronRight,
-  Moon,
-  Sun,
-  Terminal,
   BookOpen,
   Target,
-  UsersRound,
+  Mic,
 } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/dashboard/SidebarContext"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
+interface AppSidebarProps {
+  collapsed?: boolean
+  onToggleCollapse?: () => void
+}
+
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/dashboard", label: "Projects", icon: FolderKanban, exact: false },
-  { href: "/dashboard", label: "My Progress", icon: Target, exact: false },
-  { href: "/dashboard/mentor", label: "Mentor", icon: UsersRound, exact: false },
-  { href: "/dashboard", label: "Resources", icon: BookOpen, exact: false },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderKanban, exact: false },
+  { href: "/dashboard/progress", label: "My Progress", icon: Target, exact: false },
+  { href: "/dashboard/resources", label: "Resources", icon: BookOpen, exact: false },
+  { href: "/dashboard/interview", label: "Interview Practice", icon: Mic, exact: false },
 ]
 
 const bottomItems = [
-  { href: "/dashboard", label: "Profile", icon: User },
-  { href: "/dashboard", label: "Settings", icon: Settings },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "#", label: "Log out", icon: LogOut, action: "logout" },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
+  const router = useRouter()
   const { collapsed, setCollapsed, width } = useSidebar()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   const isActive = (href: string) => {
-    if (href === "/dashboard/mentor") return pathname?.startsWith("/dashboard/mentor")
     if (href === "/dashboard") return pathname === "/dashboard" || pathname?.startsWith("/dashboard/project")
     return pathname?.startsWith(href)
   }
@@ -64,22 +70,28 @@ export function AppSidebar() {
       <div className="flex h-16 items-center gap-2 border-b border-border px-3">
         <Link
           href="/dashboard"
-          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-lg py-2 transition-colors hover:bg-accent/50"
+          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-lg py-2"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
-            <Terminal className="h-5 w-5" />
+          {/* Small purple "iv" mark for collapsed state */}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
+            <span className="text-sm font-black tracking-tighter text-primary font-logo select-none">iv</span>
           </div>
           <AnimatePresence mode="wait">
             {!collapsed && (
-              <motion.span
+              <motion.div
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.15 }}
-                className="truncate text-base font-bold tracking-tight text-foreground font-logo"
+                className="flex flex-col leading-none overflow-hidden"
               >
-                Interna<span className="text-primary">.</span>
-              </motion.span>
+                <span className="text-sm font-black tracking-tight text-foreground font-logo whitespace-nowrap">
+                  INTER<span className="text-primary">NA</span><span className="text-primary">.</span>
+                </span>
+                <span className="text-[9px] font-bold tracking-wider text-muted-foreground font-logo whitespace-nowrap">
+                  <span className="text-primary">V</span>IRTUAL
+                </span>
+              </motion.div>
             )}
           </AnimatePresence>
         </Link>
@@ -87,7 +99,7 @@ export function AppSidebar() {
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
@@ -101,14 +113,17 @@ export function AppSidebar() {
           return (
             <Link key={item.label} href={item.href}>
               <motion.span
-                whileHover={{ x: 2 }}
+                whileHover={{ x: active ? 0 : 2 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary-foreground" />
+                )}
                 <Icon className="h-5 w-5 shrink-0" />
                 <AnimatePresence mode="wait">
                   {!collapsed && (
@@ -132,42 +147,31 @@ export function AppSidebar() {
 
       {/* Bottom: Theme + Profile/Settings */}
       <div className="flex flex-col gap-1 p-2">
-        <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute left-0 top-0 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <AnimatePresence mode="wait">
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-xs text-muted-foreground"
-              >
-                {mounted ? (theme === "dark" ? "Dark" : "Light") : "\u00A0"}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
+
         {bottomItems.map((item) => {
           const Icon = item.icon
+          const content = (
+            <span
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </span>
+          )
+
+          if ('action' in item && item.action === "logout") {
+            return (
+              <button key={item.label} onClick={handleLogout} className="w-full text-left">
+                {content}
+              </button>
+            )
+          }
+
           return (
             <Link key={item.label} href={item.href}>
-              <span
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </span>
+              {content}
             </Link>
           )
         })}

@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardClient } from "@/components/dashboard/DashboardClient"
-import { DashboardWithOnboarding } from "@/components/dashboard/DashboardWithOnboarding"
+import { HomeWelcome } from "@/components/dashboard/HomeWelcome"
+import { HomeStats } from "@/components/dashboard/HomeStats"
+import { QuickAccess } from "@/components/dashboard/QuickAccess"
+import { TaskGrid } from "@/components/dashboard/TaskGrid"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -15,26 +17,18 @@ export default async function DashboardPage() {
         .eq("id", user.id)
         .single()
 
-    if (!profile) redirect("/signup")
-
-    // Show bubble for users who haven't completed onboarding
-    const needsOnboarding = !profile.onboarding_completed
-
-    if (needsOnboarding) {
-        return (
-            <DashboardWithOnboarding
-                userName={profile.full_name}
-                fieldKey={profile.field || "frontend"}
-                experienceLevel={profile.experience_level || "student"}
-            />
-        )
-    }
-
     return (
-        <DashboardClient
-            userName={profile.full_name}
-            fieldKey={profile.field}
-            experienceLevel={profile.experience_level}
-        />
+        <div className="space-y-8">
+            <HomeWelcome
+                userName={profile?.full_name ?? user.email ?? "Developer"}
+                fieldKey={profile?.field ?? "frontend"}
+                experienceLevel={profile?.experience_level ?? "junior"}
+            />
+            <HomeStats />
+            <QuickAccess />
+            <section className="space-y-6">
+                <TaskGrid />
+            </section>
+        </div>
     )
 }

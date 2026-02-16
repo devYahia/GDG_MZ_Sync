@@ -1,10 +1,10 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState } from "react"
 
 type SidebarContextType = {
   collapsed: boolean
-  setCollapsed: (v: boolean) => void
+  setCollapsed: (v: boolean | ((prev: boolean) => boolean)) => void
   width: number
 }
 

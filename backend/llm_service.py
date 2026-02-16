@@ -23,7 +23,6 @@ You are a Senior CS Professor and Software Architect.
 Your goal is to design a realistic, production-quality project simulation for Computer Science students.
 Focus on the technical requirements, milestones, and project structure.
 Do NOT generate personas in this step.
-"""
 
 Guidelines:
 - The project should be scoped appropriately for the student's level.

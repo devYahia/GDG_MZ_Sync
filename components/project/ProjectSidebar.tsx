@@ -32,32 +32,45 @@ export function ProjectSidebar({ groups, activeId, onSelect }: ProjectSidebarPro
             </div>
 
             {/* Navigation Items */}
-            <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-                {items.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => onSelect(item.id)}
-                        className={cn(
-                            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                            activeId === item.id
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
+            <nav className="flex-1 overflow-y-auto p-2 space-y-4">
+                {groups.map((group) => (
+                    <div key={group.title}>
+                        {group.title && (
+                            <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">
+                                {group.title}
+                            </div>
                         )}
-                    >
-                        <span className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-                            activeId === item.id
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-muted text-muted-foreground/60"
-                        )}>
-                            {item.type === "description" ? (
-                                <FileText className="h-3.5 w-3.5" />
-                            ) : (
-                                <MessageCircle className="h-3.5 w-3.5" />
-                            )}
-                        </span>
-                        <span className="truncate">{item.label}</span>
-                    </button>
+                        <div className="space-y-1">
+                            {group.items.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => onSelect(item.id)}
+                                    className={cn(
+                                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                                        activeId === item.id
+                                            ? "bg-primary text-primary-foreground shadow-sm"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+                                        activeId === item.id
+                                            ? "bg-primary-foreground/20 text-primary-foreground"
+                                            : "bg-muted text-muted-foreground/60"
+                                    )}>
+                                        {item.type === "description" ? (
+                                            <FileText className="h-3.5 w-3.5" />
+                                        ) : item.type === "report" ? (
+                                            <BarChart3 className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <MessageCircle className="h-3.5 w-3.5" />
+                                        )}
+                                    </span>
+                                    <span className="truncate">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 ))}
             </nav>
 

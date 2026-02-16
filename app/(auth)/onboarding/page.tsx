@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import Link from "next/link"
 import {
     Terminal,
@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
 import { completeOnboarding } from "../actions"
 
@@ -51,6 +52,28 @@ export default function OnboardingPage() {
     const [field, setField] = useState("")
     const [experienceLevel, setExperienceLevel] = useState("")
     const [interests, setInterests] = useState<string[]>([])
+
+    useEffect(() => {
+        const checkProfile = async () => {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('field')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile?.field) {
+                    setField(profile.field)
+                    setStep(2)
+                }
+            }
+        }
+
+        checkProfile()
+    }, [])
 
     function toggleInterest(interest: string) {
         setInterests((prev) => {

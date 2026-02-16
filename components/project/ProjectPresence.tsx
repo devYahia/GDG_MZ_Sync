@@ -41,7 +41,7 @@ export function ProjectPresence({ projectId }: ProjectPresenceProps) {
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState()
-        const presences = (state[projectId] ?? []) as { user_id: string; user_name: string }[]
+        const presences = (state[projectId] || []) as unknown as { user_id: string; user_name: string }[]
         const unique = presences.filter((p, i, a) => a.findIndex(x => x.user_id === p.user_id) === i)
         setPresence(unique)
       })

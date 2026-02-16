@@ -7,12 +7,14 @@ import {
   LayoutDashboard,
   FolderKanban,
   User,
-  Settings,
+  LogOut,
   ChevronLeft,
   ChevronRight,
   BookOpen,
   Target,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/dashboard/SidebarContext"
@@ -33,12 +35,19 @@ const navItems = [
 
 const bottomItems = [
   { href: "/dashboard", label: "Profile", icon: User },
-  { href: "/dashboard", label: "Settings", icon: Settings },
+  { href: "#", label: "Log out", icon: LogOut, action: "logout" },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { collapsed, setCollapsed, width } = useSidebar()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard" || pathname?.startsWith("/dashboard/project")
@@ -139,16 +148,28 @@ export function AppSidebar() {
 
         {bottomItems.map((item) => {
           const Icon = item.icon
+          const content = (
+            <span
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </span>
+          )
+
+          if ('action' in item && item.action === "logout") {
+            return (
+              <button key={item.label} onClick={handleLogout} className="w-full text-left">
+                {content}
+              </button>
+            )
+          }
+
           return (
             <Link key={item.label} href={item.href}>
-              <span
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </span>
+              {content}
             </Link>
           )
         })}

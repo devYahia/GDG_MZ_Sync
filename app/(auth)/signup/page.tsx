@@ -8,17 +8,19 @@ import {
     Mail,
     Lock,
     User,
-    ArrowRight,
     Check,
     MapPin,
     Shield,
     MailCheck,
+    ArrowRight,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 
 import { signup } from "../actions"
 
@@ -44,9 +46,10 @@ export default function SignupPage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [region, setRegion] = useState("")
+    const [field, setField] = useState<TaskField | "">("")
 
     function handleStep1() {
-        if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !region.trim()) {
+        if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !region.trim() || !field) {
             toast.error("Please fill in all fields")
             return
         }
@@ -63,6 +66,7 @@ export default function SignupPage() {
                 confirmPassword,
                 fullName,
                 region,
+                field,
             })
 
             if (result?.error) {
@@ -223,6 +227,41 @@ export default function SignupPage() {
                                         />
                                     </div>
                                 </div>
+                                <div className="space-y-3">
+                                    <Label className="text-white/70">Select Your Track</Label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {(Object.entries(FIELD_CONFIG) as [TaskField, typeof FIELD_CONFIG[TaskField]][]).map(([key, cfg]) => {
+                                            const Icon = cfg.icon
+                                            const isSelected = field === key
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setField(key)}
+                                                    className={cn(
+                                                        "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all duration-200",
+                                                        isSelected
+                                                            ? "border-purple-500/50 bg-purple-500/10 shadow-[0_0_15px_-3px_rgba(168,85,247,0.3)]"
+                                                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                                                        isSelected ? cfg.bg : "bg-white/5"
+                                                    )}>
+                                                        <Icon className={cn("h-4 w-4", isSelected ? cfg.color : "text-white/40")} />
+                                                    </div>
+                                                    <span className={cn(
+                                                        "text-[10px] font-bold uppercase tracking-wider",
+                                                        isSelected ? "text-white" : "text-white/40"
+                                                    )}>
+                                                        {cfg.label}
+                                                    </span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
                                 <Button
                                     className="w-full h-12 bg-gradient-to-r from-[#4e1e40] to-black border border-white/10 hover:shadow-[0_0_20px_-5px_rgba(78,30,64,0.5)] transition-all duration-300 rounded-lg font-medium text-white"
                                     disabled={isPending}
@@ -343,6 +382,7 @@ export default function SignupPage() {
                                                     confirmPassword,
                                                     fullName,
                                                     region,
+                                                    field: field || "",
                                                 })
                                                 if (result?.error) {
                                                     toast.error(result.error)
@@ -374,7 +414,7 @@ export default function SignupPage() {
                 <p className="mt-8 text-center font-mono text-xs text-white/20">
                     Built for GDG Hackathon 2026
                 </p>
-            </div>
+            </div >
         </div >
     )
 }

@@ -29,6 +29,14 @@ const signupSchema = authSchema
             .min(2, "Name must be at least 2 characters")
             .max(100, "Name is too long"),
         region: z.string().min(2, "Region is required"),
+        field: z.enum([
+            "frontend",
+            "backend",
+            "fullstack",
+            "mobile",
+            "data",
+            "design",
+        ]),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords don't match",
@@ -92,6 +100,7 @@ export async function signup(data: {
     confirmPassword: string
     fullName: string
     region: string
+    field: string
 }): Promise<AuthResult> {
     const validated = signupSchema.safeParse(data)
     if (!validated.success) {
@@ -107,6 +116,7 @@ export async function signup(data: {
             data: {
                 full_name: validated.data.fullName,
                 region: validated.data.region,
+                field: validated.data.field,
             },
         },
     })

@@ -333,8 +333,8 @@ Reply with a short feedback paragraph, then conclude with exactly one line: APPR
 
 async def generate_code_review(req) -> dict:
     """Generates a code review response."""
-    # Use 1.5-flash as it's more stable for these reviews
-    llm = _get_llm(model="gemini-1.5-flash", temperature=0.2)
+    # Use 2.5-flash as the other one is not found
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.2)
     
     system_prompt = _review_system_prompt(req)
     human_content = f"""Code to review (language: {req.language}):
@@ -413,10 +413,10 @@ def _interviewer_system_prompt(req: InterviewChatRequest) -> str:
     return f"{role_en}\n{style_en}\n{job_context}\n{constraint_en}\nSpeak in English."
 
 
-def generate_interview_chat(req: InterviewChatRequest) -> dict:
+async def generate_interview_chat(req: InterviewChatRequest) -> dict:
     """
     Generates a response from the AI Interviewer. 
-    Supports multimodal input (text + image) using Gemini 1.5 Flash.
+    Supports multimodal input (text + image) using Gemini 2.5 Flash.
     """
     # Use Flash for speed and multimodal capabilities
     llm = _get_llm(model="gemini-2.5-flash", temperature=0.7)
@@ -445,11 +445,11 @@ def generate_interview_chat(req: InterviewChatRequest) -> dict:
     if len(messages) == 1: # Only system prompt
         messages.append(HumanMessage(content="Hello, I am ready. Please start the interview."))
 
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     return {"reply": response.content}
 
 
-def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
+async def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
     """
     Generates a final feedback report based on the interview history.
     """
@@ -498,13 +498,13 @@ def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
         
     messages.append(HumanMessage(content=f"\n\n---\n{final_instruction}"))
     
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     return {"report": response.content}
 
 async def generate_chat_analysis(req: ChatAnalysisRequest):
     """Analyzes chat history to evaluate soft and technical skills."""
-    # Use 1.5-flash for structured analysis to avoid 403/Forbidden issues
-    llm = _get_llm(model="gemini-1.5-flash", temperature=0.3)
+    # Use 2.5-flash (Note: if this fails with 403, it might be due to AFC/Structured Output limitations on this specific model)
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.3)
     structured_llm = llm.with_structured_output(ChatAnalysisResponse)
 
     system_prompt = """You are an Expert Technical Mentor and Career Coach.

@@ -6,8 +6,9 @@ import { Play, Download, Loader2, CheckCircle2, AlertTriangle, XCircle, FileCode
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { getBackendBase } from "@/lib/api-config"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+const API_BASE = getBackendBase()
 
 interface StepEvent {
     type: "step" | "file" | "execute" | "lint" | "error" | "done" | "report"

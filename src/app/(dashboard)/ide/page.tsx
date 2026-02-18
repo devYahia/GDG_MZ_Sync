@@ -12,6 +12,7 @@ import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
+import { getBackendBase } from "@/lib/api-config"
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
     ssr: false,
@@ -22,7 +23,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
     ),
 })
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+const API_BASE = getBackendBase()
 
 interface FileNode {
     name: string

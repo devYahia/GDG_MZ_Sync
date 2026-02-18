@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { getBackendBase } from "@/lib/api-config"
 
 const DEFAULT_FILES: Record<string, string> = {
   "src/index.js": "// Entry point – implement your solution here.\n// Use Run (▶) to execute and see output.\n",
@@ -59,7 +60,8 @@ export function ProjectWorkspaceProvider({
   useEffect(() => {
     const initSession = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8001/api/repo/init", {
+        const backendBase = getBackendBase()
+        const res = await fetch(`${backendBase}/api/repo/init`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ files: defaultFiles }),
@@ -81,7 +83,8 @@ export function ProjectWorkspaceProvider({
     setFiles((prev) => ({ ...prev, [path]: content }))
     if (sessionId) {
       // Background sync
-      fetch("http://127.0.0.1:8001/api/repo/file/update", {
+      const backendBase = getBackendBase()
+      fetch(`${backendBase}/api/repo/file/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId, rel_path: path, content }),
@@ -93,7 +96,8 @@ export function ProjectWorkspaceProvider({
     setFiles((prev) => ({ ...prev, [path]: content }))
     setActiveFileIdState(path)
     if (sessionId) {
-      fetch("http://127.0.0.1:8001/api/repo/file/create", {
+      const backendBase = getBackendBase()
+      fetch(`${backendBase}/api/repo/file/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId, rel_path: path, content }),
@@ -110,7 +114,8 @@ export function ProjectWorkspaceProvider({
       setActiveFileIdState(Object.keys(next)[0])
     }
     if (sessionId) {
-      fetch("http://127.0.0.1:8001/api/repo/file/delete", {
+      const backendBase = getBackendBase()
+      fetch(`${backendBase}/api/repo/file/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId, rel_path: path }),

@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { SetupStep } from "./SetupStep"
 import { ActiveSession } from "./ActiveSession"
 import { InterviewFeedback } from "./InterviewFeedback"
+import { getBackendBase } from "@/lib/api-config"
 
 export type InterviewStage = "SETUP" | "ACTIVE" | "FEEDBACK"
 
@@ -85,7 +86,8 @@ export function InterviewClient() {
         // Fetch feedback logic will trigger in the Feedback component
         try {
             setIsAIProcessing(true)
-            const res = await fetch("http://127.0.0.1:8001/api/interview/feedback", {
+            const backendBase = getBackendBase()
+            const res = await fetch(`${backendBase}/api/interview/feedback`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

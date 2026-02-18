@@ -15,9 +15,9 @@ class DaytonaService:
 
     def _setup_client(self):
         try:
-            import daytona
+            import daytona_sdk
             # Placeholder for actual client initialization
-            # self.client = daytona.Daytona(api_key=self.api_key, server_url=self.server_url)
+            # self.client = daytona_sdk.Daytona(api_key=self.api_key, server_url=self.server_url)
             logger.info("Daytona SDK imported successfully (mock client setup).")
         except ImportError:
             logger.warning("Daytona SDK not installed. Execution features will be disabled.")

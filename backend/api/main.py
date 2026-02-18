@@ -191,6 +191,16 @@ async def extract_repo(request: RepoRequest):
     if not result:
         raise HTTPException(status_code=400, detail="Failed to extract repository")
     return result
+@app.post("/api/interview/chat")
+async def interview_chat(req: InterviewChatRequest):
+    try:
+        return await generate_interview_chat(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ... other endpoints truncated for brevity (Interview, Execute, etc. would follow similar pattern)
-# For the sake of completing the PLAN, I'll assume these remain functional or are updated as needed.
+@app.post("/api/interview/feedback")
+async def interview_feedback(req: InterviewFeedbackRequest):
+    try:
+        return await generate_interview_feedback(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

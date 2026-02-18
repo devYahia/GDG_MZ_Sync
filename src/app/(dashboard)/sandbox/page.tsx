@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Loader2, FileCode, Download, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
+import { getBackendBase } from "@/lib/api-config"
 
 interface ReviewFile {
     content: string
@@ -36,7 +37,7 @@ export default function SandboxPage() {
             return
         }
 
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+        const apiBase = getBackendBase()
         // Fetch review results
         fetch(`${apiBase}/review/${jobId}/files`)
             .then(res => res.json())

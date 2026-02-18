@@ -198,7 +198,7 @@ Format as JSON:
     "reason": "brief explanation"
 }}"""
         
-        response = llm.invoke(prompt)
+        response = await llm.ainvoke(prompt)
         
         # Try to parse JSON from response
         content = response.content.strip()

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 // import { useSpeechRecognition } from "@/hooks/useSpeechRecognition" // We'll implement inline for simplicity or hook if needed
 import { toast } from "sonner"
 import type { ChatMessage } from "./InterviewClient"
+import { getBackendBase } from "@/lib/api-config"
 
 interface ActiveSessionProps {
     stream: MediaStream | null
@@ -232,7 +233,8 @@ export function ActiveSession({
             // Let's capture active frame
             const imageBase64 = captureFrame()
 
-            const res = await fetch("http://127.0.0.1:8001/api/interview/chat", {
+            const backendBase = getBackendBase()
+            const res = await fetch(`${backendBase}/api/interview/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -8,6 +8,7 @@ import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getBackendBase } from "@/lib/api-config";
 
 interface ConnectionModalProps {
     isOpen: boolean;
@@ -29,7 +30,8 @@ export default function ConnectionModal({ isOpen, onClose, onConnect }: Connecti
             if (!url || typeof url !== 'string' || !url.includes("github.com")) return;
             setLoadingBranches(true);
             try {
-                const res = await fetch("http://127.0.0.1:8001/api/repo/branches", {
+                const backendBase = getBackendBase();
+                const res = await fetch(`${backendBase}/api/repo/branches`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ github_url: url, access_token: token }),

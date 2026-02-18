@@ -80,8 +80,10 @@ Output a list of personas (including the Client).
 def _ensure_env():
     from pathlib import Path
     from dotenv import load_dotenv
-    _backend_dir = Path(__file__).resolve().parent
-    _root = _backend_dir.parent
+    _current_dir = Path(__file__).resolve().parent
+    # Project root is 2 levels up from backend/application/llm_service.py
+    _root = _current_dir.parent.parent
+    _backend_dir = _current_dir.parent
     load_dotenv(dotenv_path=_backend_dir / ".env")
     load_dotenv(dotenv_path=_root / ".env.local")
     load_dotenv(dotenv_path=_root / ".env")
@@ -90,7 +92,7 @@ def _get_llm(model: str | None = None, temperature=0.7):
     _ensure_env()
     from langchain_google_genai import ChatGoogleGenerativeAI
     api_key = os.getenv("GEMINI_API_KEY")
-    default_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    default_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables.")
     return ChatGoogleGenerativeAI(
@@ -416,7 +418,7 @@ def generate_interview_chat(req: InterviewChatRequest) -> dict:
     Supports multimodal input (text + image) using Gemini 1.5 Flash.
     """
     # Use Flash for speed and multimodal capabilities
-    llm = _get_llm(model="gemini-1.5-flash", temperature=0.7)
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.7)
     
     system_prompt = _interviewer_system_prompt(req)
     messages = [SystemMessage(content=system_prompt)]
@@ -450,7 +452,7 @@ def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
     """
     Generates a final feedback report based on the interview history.
     """
-    llm = _get_llm(model="gemini-1.5-flash", temperature=0.5)
+    llm = _get_llm(model="gemini-2.5-flash", temperature=0.5)
     
     lang = req.language
     job_context = f"Job Description: {req.job_description}"

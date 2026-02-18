@@ -164,7 +164,7 @@ async def analyze_file_with_ai(file_path: str, code: str, language: str, executi
     """Use AI to deeply analyze a single file"""
     try:
         from application.llm_service import _get_llm
-        llm = _get_llm(model="gemini-1.5-flash", temperature=0.2)
+        llm = _get_llm(model="gemini-2.5-flash", temperature=0.2)
         
         prompt = f"""Analyze this {language} code file and provide a professional review.
 

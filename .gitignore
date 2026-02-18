@@ -51,3 +51,13 @@ backend/venv/
 __pycache__/
 *.pyc
 backend/.env
+
+# spec tools
+specs
+.specify
+
+# documentation (don't commit internal docs, keep only README/CONSTITUTION/STARTUP_GUIDE)
+*.md
+!README.md
+!CONSTITUTION.md
+!backend/STARTUP_GUIDE.md

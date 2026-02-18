@@ -6,16 +6,16 @@
 Deliver a working MVP that demos flawlessly over perfect architecture. Every decision optimizes for demo impact. If a feature isn't in the demo, defer it.
 
 ### II. Tech Stack Alignment
-Non-negotiable stack: Next.js 14.2.x (App Router), Tailwind CSS v4, Shadcn UI, Lucide React, and Supabase (Postgres, Auth, Realtime). Use Nuqs for URL state and Zustand for global state.
+Non-negotiable stack: Next.js 14.2.x (App Router), Tailwind CSS v4, Shadcn UI, Lucide React, and PostgreSQL/Drizzle (Auth.js v5 for Auth). Use Nuqs for URL state and Zustand for global state.
 
 ### III. Security First (Non-Negotiable)
-Row Level Security (RLS) must be enabled on all database tables. All inputs and environment variables must be validated using Zod schemas.
+All database interactions must be secured via server-side checks and proper session validation. All inputs and environment variables must be validated using Zod schemas.
 
 ### IV. Mobile-First & Responsive
 Every component MUST work on mobile, tablet, and desktop. Design for mobile first and scale up.
 
 ### V. Atomic Operations
-Use Supabase atomic operations for counters and inventory management to prevent race conditions.
+Use PostgreSQL atomic operations and transactions for counters and sensitive state changes to prevent race conditions.
 
 ## Architecture Constraints
 

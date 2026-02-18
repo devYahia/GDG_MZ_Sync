@@ -18,12 +18,12 @@ conda activate your_env_name
 
 3. **Install dependencies** (if not already):
 ```bash
-pip install fastapi uvicorn sse-starlette python-dotenv supabase
+pip install fastapi uvicorn sse-starlette python-dotenv asyncpg langchain langchain-google-genai
 ```
 
 4. **Start the backend**:
 ```bash
-uvicorn main:app --reload --port 8001 --host 0.0.0.0
+uvicorn api.main:app --reload --port 8001 --host 0.0.0.0
 ```
 
 5. **Verify backend is running**:

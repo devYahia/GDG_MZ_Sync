@@ -1,1 +1,0 @@
-app/(dashboard)/dashboard/mentor/page.tsx(29,5): error TS2531: Object is possibly 'null'.

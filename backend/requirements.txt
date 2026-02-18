@@ -11,3 +11,4 @@ gitpython
 requests
 googlesearch-python
 # Removed supabase
+daytona-sdk

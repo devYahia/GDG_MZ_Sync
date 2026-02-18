@@ -84,7 +84,11 @@ async def generate_simulation(request: GenerateSimulationRequest):
     
     # 2. Save to Postgres via asyncpg
     try:
-        user_id = getattr(request, "user_id", str(uuid.uuid4()))
+        user_id = request.user_id
+        # Check if user exists to avoid FK error
+        user_check = await db.fetchrow("SELECT id FROM \"user\" WHERE id = $1", user_id)
+        if not user_check:
+            print(f"[BACKEND ERROR] User {user_id} not found in 'user' table. Please re-login on the frontend.")
         
         # Mapping SimulationOutput to DB columns
         sim_id_row = await db.fetchrow(
@@ -158,21 +162,21 @@ async def health_check():
 @app.post("/api/chat")
 async def project_chat(req: ProjectChatRequest):
     try:
-        return generate_chat_response(req)
+        return await generate_chat_response(req)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/review")
 async def code_review(req: CodeReviewRequest):
     try:
-        return generate_code_review(req)
+        return await generate_code_review(req)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/analyze-chat")
 async def analyze_chat(req: ChatAnalysisRequest):
     try:
-        return generate_chat_analysis(req)
+        return await generate_chat_analysis(req)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

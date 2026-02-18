@@ -300,7 +300,7 @@ Tone instructions: {tone}
 Always answer in English, as this client only (unless specifically asked differently). Refer to specific project details when natural.
 FORMATTING: Use Markdown for all lists, code snippets, and emphasis to improve readability."""
 
-def generate_chat_response(req) -> dict:
+async def generate_chat_response(req) -> dict:
     """Generates a chat response from the persona. Higher level = higher temperature for more varied tone."""
     level = max(1, min(8, getattr(req, "level", 1) or 1))
     temperature = 0.75 if level <= 3 else 0.85  # more variation at higher levels
@@ -317,7 +317,7 @@ def generate_chat_response(req) -> dict:
         else:
             messages.append(AIMessage(content=m.content))
             
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     return {"reply": response.content}
 
 
@@ -331,9 +331,10 @@ Review the code for correctness, clarity, and fit to the project. Be constructiv
 
 Reply with a short feedback paragraph, then conclude with exactly one line: APPROVED or NOT_APPROVED."""
 
-def generate_code_review(req) -> dict:
+async def generate_code_review(req) -> dict:
     """Generates a code review response."""
-    llm = _get_llm(temperature=0.2)
+    # Use 1.5-flash as it's more stable for these reviews
+    llm = _get_llm(model="gemini-1.5-flash", temperature=0.2)
     
     system_prompt = _review_system_prompt(req)
     human_content = f"""Code to review (language: {req.language}):
@@ -351,7 +352,7 @@ Provide feedback and end with APPROVED or NOT_APPROVED."""
         HumanMessage(content=human_content)
     ]
     
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     text = (str(response.content) or "").strip()
     
     # Parse approval
@@ -500,9 +501,10 @@ def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
     response = llm.invoke(messages)
     return {"report": response.content}
 
-def generate_chat_analysis(req: ChatAnalysisRequest):
+async def generate_chat_analysis(req: ChatAnalysisRequest):
     """Analyzes chat history to evaluate soft and technical skills."""
-    llm = _get_llm(temperature=0.3)
+    # Use 1.5-flash for structured analysis to avoid 403/Forbidden issues
+    llm = _get_llm(model="gemini-1.5-flash", temperature=0.3)
     structured_llm = llm.with_structured_output(ChatAnalysisResponse)
 
     system_prompt = """You are an Expert Technical Mentor and Career Coach.
@@ -536,4 +538,4 @@ Conversation History:
     ])
 
     chain = prompt | structured_llm
-    return chain.invoke({})
+    return await chain.ainvoke({})

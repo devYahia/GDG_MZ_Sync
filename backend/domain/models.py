@@ -60,6 +60,7 @@ class SimulationOutput(BaseModel):
     quiz: List[QuizQuestion] = []
 
 class GenerateSimulationRequest(BaseModel):
+    user_id: str
     title: str
     context: str
     level: str  # e.g. "L0", "L5", "L10"
@@ -86,6 +87,7 @@ class PersonaChatInfo(BaseModel):
 
 class SimulationContextForChat(BaseModel):
     """Full project context so the client persona can answer in detail."""
+    user_id: Optional[str] = None
     overview: Optional[str] = None
     learning_objectives: Optional[List[str]] = None
     functional_requirements: Optional[List[str]] = None

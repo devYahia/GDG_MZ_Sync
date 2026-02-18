@@ -37,9 +37,13 @@ yarn-error.log*
 # vercel
 .vercel
 
-# agent configs
+# internal tooling & configs
 .agent
+.agents
 .cursor
+.devcontainer
+.specify
+specs
 
 # typescript
 *.tsbuildinfo
@@ -52,11 +56,7 @@ __pycache__/
 *.pyc
 backend/.env
 
-# spec tools
-specs
-.specify
-
-# documentation (don't commit internal docs, keep only README/CONSTITUTION/STARTUP_GUIDE)
+# documentation (ignore md except public ones)
 *.md
 !README.md
 !CONSTITUTION.md

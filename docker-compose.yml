@@ -23,6 +23,8 @@ services:
       - AUTH_TRUST_HOST=${AUTH_TRUST_HOST:-true}
     depends_on:
       - backend
+    networks:
+      - coolify
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
@@ -46,6 +48,8 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - DAYTONA_API_KEY=${DAYTONA_API_KEY:-}
       - DAYTONA_SERVER_URL=${DAYTONA_SERVER_URL:-}
+    networks:
+      - coolify
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/health || exit 1"]
@@ -53,3 +57,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 60s
+
+networks:
+  coolify:
+    external: true

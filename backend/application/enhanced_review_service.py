@@ -163,7 +163,7 @@ async def lint_file(file_path: str, language: str) -> Dict:
 async def analyze_file_with_ai(file_path: str, code: str, language: str, execution_result: Dict, lint_result: Dict) -> Dict:
     """Use AI to deeply analyze a single file"""
     try:
-        from llm_service import _get_llm
+        from application.llm_service import _get_llm
         llm = _get_llm(model="gemini-1.5-flash", temperature=0.2)
         
         prompt = f"""Analyze this {language} code file and provide a professional review.

@@ -90,7 +90,7 @@ def _get_llm(model: str | None = None, temperature=0.7):
     _ensure_env()
     from langchain_google_genai import ChatGoogleGenerativeAI
     api_key = os.getenv("GEMINI_API_KEY")
-    default_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    default_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables.")
     return ChatGoogleGenerativeAI(
@@ -100,7 +100,7 @@ def _get_llm(model: str | None = None, temperature=0.7):
     )
 
 async def generate_project_structure(title, context, level, level_description):
-    from schemas import ProjectStructure
+    from domain.models import ProjectStructure
     from langchain_core.prompts import ChatPromptTemplate
     llm = _get_llm()
     structured_llm = llm.with_structured_output(ProjectStructure)
@@ -111,7 +111,7 @@ async def generate_project_structure(title, context, level, level_description):
     })
 
 async def generate_personas(title, context, level, team_mode):
-    from schemas import PersonaList
+    from domain.models import PersonaList
     from langchain_core.prompts import ChatPromptTemplate
     llm = _get_llm()
     structured_llm = llm.with_structured_output(PersonaList)
@@ -123,8 +123,8 @@ async def generate_personas(title, context, level, team_mode):
 
 async def generate_simulation_content(title, context, level, team_mode = "group"):
     """Invokes Gemini via LangChain in parallel and merges results."""
-    from schemas import SimulationOutput
-    from constants import get_level_description
+    from domain.models import SimulationOutput
+    from infrastructure.constants import get_level_description
     
     level_description = get_level_description(level)
 
@@ -416,7 +416,7 @@ def generate_interview_chat(req: InterviewChatRequest) -> dict:
     Supports multimodal input (text + image) using Gemini 1.5 Flash.
     """
     # Use Flash for speed and multimodal capabilities
-    llm = _get_llm(model="gemini-2.5-flash", temperature=0.7)
+    llm = _get_llm(model="gemini-1.5-flash", temperature=0.7)
     
     system_prompt = _interviewer_system_prompt(req)
     messages = [SystemMessage(content=system_prompt)]
@@ -450,7 +450,7 @@ def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
     """
     Generates a final feedback report based on the interview history.
     """
-    llm = _get_llm(model="gemini-2.5-flash", temperature=0.5)
+    llm = _get_llm(model="gemini-1.5-flash", temperature=0.5)
     
     lang = req.language
     job_context = f"Job Description: {req.job_description}"

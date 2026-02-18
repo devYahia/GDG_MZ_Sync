@@ -22,8 +22,7 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - AUTH_TRUST_HOST=${AUTH_TRUST_HOST:-true}
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - interna-network
     restart: unless-stopped
@@ -53,7 +52,7 @@ services:
       - interna-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8001/health"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

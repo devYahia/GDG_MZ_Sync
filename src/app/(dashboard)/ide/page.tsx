@@ -143,11 +143,16 @@ export default function IDEPage() {
         }
     }, [files, activeFile])
 
-    const startReview = async () => {
+    const [pendingSandboxRedirect, setPendingSandboxRedirect] = useState(false)
+    const pendingRedirectRef = useRef(false)
+
+    const startReview = async (shouldRedirect = false) => {
         if (!repoUrl.startsWith("http")) {
             alert("Please enter a valid GitHub URL")
             return
         }
+
+        if (shouldRedirect) pendingRedirectRef.current = true
 
         setReviewSteps([])
         setReport("")
@@ -167,11 +172,18 @@ export default function IDEPage() {
                 const err = await res.json()
                 setReviewSteps([{ type: "error", message: err.detail || "Failed to start review" }])
                 setIsReviewing(false)
+                pendingRedirectRef.current = false
                 return
             }
 
             const { job_id, stream_url } = await res.json()
             setReviewSteps([{ type: "step", message: `🚀 Review started (${job_id.slice(0, 8)}…)` }])
+
+            // If we have a pending redirect, do it now
+            if (pendingRedirectRef.current) {
+                window.open(`/sandbox?job=${job_id}`, '_blank')
+                pendingRedirectRef.current = false
+            }
 
             const eventSource = new EventSource(`${API_BASE}${stream_url}`)
             eventSourceRef.current = eventSource
@@ -372,20 +384,13 @@ export default function IDEPage() {
                                 className="mb-2 bg-black/50 border-white/20 text-sm h-9"
                             />
                             <Button
-                                onClick={() => {
-                                    if (!repoUrl.startsWith("http")) {
-                                        alert("Please enter a valid GitHub URL")
-                                        return
-                                    }
-                                    // Open Sandbox page (served from public/sandbox/index.html)
-                                    window.open(`/sandbox?repo=${encodeURIComponent(repoUrl)}`, '_blank')
-                                }}
-                                disabled={!repoUrl}
+                                onClick={() => startReview(true)}
+                                disabled={!repoUrl || isReviewing}
                                 size="sm"
                                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-8"
                             >
                                 <Activity className="h-4 w-4 mr-1" />
-                                Open in Sandbox
+                                {isReviewing ? "Starting..." : "Open in Sandbox"}
                             </Button>
                         </div>
                     </div>

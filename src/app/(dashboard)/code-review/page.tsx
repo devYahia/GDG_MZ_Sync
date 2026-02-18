@@ -188,14 +188,25 @@ export default function CodeReviewPage() {
                                 )}
                             </Button>
                             <Button
-                                onClick={() => window.open(`/sandbox?repo=${encodeURIComponent(repoUrl)}`, '_blank')}
+                                onClick={() => {
+                                    // Extract full job ID from steps
+                                    const jobStep = steps.find(s => s.message.includes("Review started"))
+                                    const match = jobStep?.message.match(/\(job: (.*?)\…\)/)
+                                    const jobId = match ? match[1] : null
+
+                                    if (jobId) {
+                                        window.open(`/sandbox?job=${jobId}`, '_blank')
+                                    } else {
+                                        alert("Please wait for the review to start and generate a job ID")
+                                    }
+                                }}
                                 size="lg"
                                 variant="outline"
                                 className="border-blue-500/30 hover:bg-blue-500/10 text-blue-400 font-semibold px-8 h-12"
-                                disabled={!repoUrl}
+                                disabled={!repoUrl || isReviewing}
                             >
                                 <Terminal className="mr-2 h-5 w-5" />
-                                Open Sandbox
+                                {report ? "Open Sandbox Results" : "Open Sandbox"}
                             </Button>
                         </div>
                     </div>

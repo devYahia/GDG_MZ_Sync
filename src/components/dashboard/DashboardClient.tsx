@@ -13,6 +13,7 @@ import { ContinueSection } from "@/components/dashboard/ContinueSection"
 import { DiscoverSection } from "@/components/dashboard/DiscoverSection"
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline"
 import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot"
+import { SimulationTemplates } from "@/components/dashboard/SimulationTemplates"
 import { cn } from "@/lib/utils"
 import type { DashboardData } from "@/app/(dashboard)/actions"
 
@@ -124,6 +125,11 @@ export function DashboardClient({ data, showQuickStart }: DashboardClientProps) 
                     ) : isReturning ? (
                         <ContinueSection projects={inProgressProjects} />
                     ) : null}
+                </motion.div>
+
+                {/* -- Simulation Templates -- */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                    <SimulationTemplates userField={user.field} />
                 </motion.div>
 
                 {/* -- Discover Section -- */}

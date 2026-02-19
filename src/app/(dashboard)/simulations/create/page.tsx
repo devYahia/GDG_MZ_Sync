@@ -176,26 +176,26 @@ export default function CreateSimulationPage() {
         } catch (error) {
             // Clear timeout if still active
             clearTimeout(timeoutId)
-            
+
             // Log error for debugging
             console.error("Generation error:", error)
-            
+
             // Determine error message
             let errorMessage = "Failed to generate simulation. Please try again."
-            
+
             if (error instanceof TypeError && error.message.includes("fetch")) {
                 errorMessage = "Network error. Please check your connection and try again."
             } else if (error instanceof Error) {
                 errorMessage = error.message
             }
-            
+
             // Show error message to user
             toast({
                 title: "Generation failed",
                 description: errorMessage,
                 variant: "destructive"
             })
-            
+
             // Stop loading state so user can try again
             setIsLoading(false)
         }
@@ -288,7 +288,17 @@ export default function CreateSimulationPage() {
                             </div>
                             <Button
                                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
-                                onClick={() => router.push(`/simulations/${generatedResult.simulation_id}`)}
+                                onClick={() => {
+                                    if (generatedResult.simulation_id.startsWith("temp-")) {
+                                        toast({
+                                            title: "Preview Mode Only",
+                                            description: "This simulation was generated but could not be saved to the database. Refreshing will lose it.",
+                                            variant: "destructive"
+                                        })
+                                        return
+                                    }
+                                    router.push(`/simulations/${generatedResult.simulation_id}`)
+                                }}
                             >
                                 Open full simulation
                             </Button>

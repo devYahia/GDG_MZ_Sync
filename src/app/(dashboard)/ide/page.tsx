@@ -162,7 +162,7 @@ export default function IDEPage() {
         if (eventSourceRef.current) eventSourceRef.current.close()
 
         try {
-            const res = await fetch(`${API_BASE}/review`, {
+            const res = await fetch(`${API_BASE}/api/review`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ repo_url: repoUrl }),
@@ -244,7 +244,7 @@ export default function IDEPage() {
     const fileList = Object.keys(files).sort()
 
     return (
-        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100">
+        <div className="h-screen flex flex-col bg-background text-foreground">
             {/* Top Bar */}
             <div className="h-14 flex items-center justify-between px-4 bg-black/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center gap-3">

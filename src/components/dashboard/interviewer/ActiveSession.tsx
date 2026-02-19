@@ -2,10 +2,19 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Mic, MicOff, Video, VideoOff, X, MessageSquare, RotateCcw } from "lucide-react"
+import {
+    Mic, MicOff, Video, VideoOff, X, MessageSquare,
+    RotateCcw, Play, Pause, Volume2, VolumeX, Settings,
+    Cpu, User, Send
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Slider } from "@/components/ui/slider"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-// import { useSpeechRecognition } from "@/hooks/useSpeechRecognition" // We'll implement inline for simplicity or hook if needed
 import { toast } from "sonner"
 import type { ChatMessage } from "./InterviewClient"
 import { getBackendBase } from "@/lib/api-config"
@@ -35,53 +44,120 @@ export function ActiveSession({
     setIsAIProcessing,
     onEnd
 }: ActiveSessionProps) {
+    // --- Refs ---
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [transcript, setTranscript] = useState("")
-    const [isListening, setIsListening] = useState(false)
     const recognitionRef = useRef<any>(null)
     const synthRef = useRef<SpeechSynthesis | null>(null)
     const lastAIResponseRef = useRef<string>("")
-    const [shouldBeListening, setShouldBeListening] = useState(false) // Track intended state
+    const scrollAreaRef = useRef<HTMLDivElement>(null)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
 
-    // Audio Context State
-    const [audioContextReady, setAudioContextReady] = useState(false)
-    const [volume, setVolume] = useState(0)
+    // --- State ---
+    const [transcript, setTranscript] = useState("")
     const [interimTranscript, setInterimTranscript] = useState("")
+    const [isListening, setIsListening] = useState(false)
+    const [shouldBeListening, setShouldBeListening] = useState(false)
+    const [volume, setVolume] = useState(0) // 0-100
+    const [audioAllowed, setAudioAllowed] = useState(false)
+    const [sessionDuration, setSessionDuration] = useState(0)
+    const [isMuted, setIsMuted] = useState(false)
+    const [aiVolume, setAiVolume] = useState(1) // 0-1
+    const [manualInput, setManualInput] = useState("")
 
-    // Initialize Video
+    // --- Timer ---
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSessionDuration(prev => prev + 1)
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [])
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+
+    // --- Video Stream Setup ---
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream
         }
-
-        // Audio Visualizer
-        if (stream) {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-            const source = audioContext.createMediaStreamSource(stream)
-            const analyser = audioContext.createAnalyser()
-            analyser.fftSize = 256
-            source.connect(analyser)
-
-            const dataArray = new Uint8Array(analyser.frequencyBinCount)
-
-            const updateVolume = () => {
-                analyser.getByteFrequencyData(dataArray)
-                const avg = dataArray.reduce((a, b) => a + b) / dataArray.length
-                setVolume(avg) // 0 to 255
-                requestAnimationFrame(updateVolume)
-            }
-            updateVolume()
-
-            return () => {
-                audioContext.close()
-            }
-        }
     }, [stream])
 
-    // Initialize Speech Recognition & Synth
+    // --- Audio Visualizer (Waveform) ---
+    useEffect(() => {
+        if (!stream || !canvasRef.current) return
+
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const source = audioContext.createMediaStreamSource(stream)
+        const analyser = audioContext.createAnalyser()
+        analyser.fftSize = 64 // Lower for bar chart style
+        source.connect(analyser)
+
+        const bufferLength = analyser.frequencyBinCount
+        const dataArray = new Uint8Array(bufferLength)
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext("2d")
+
+        if (!ctx) return
+
+        let animationId: number
+
+        const draw = () => {
+            animationId = requestAnimationFrame(draw)
+            analyser.getByteFrequencyData(dataArray)
+
+            // Calculate volume for state
+            const avg = dataArray.reduce((a, b) => a + b) / bufferLength
+            setVolume(avg)
+
+            // Draw Waveform bars
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+            const barWidth = (canvas.width / bufferLength) * 2.5
+            let barHeight
+            let x = 0
+
+            // If AI is speaking, simulate waveform (since we can't easily capture synth output)
+            if (isAISpeaking) {
+                // Randomize slightly based on time
+                const time = Date.now() / 100
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = (Math.sin(i * 0.5 + time) * 50 + 50) * (aiVolume) // Scale by AI volume
+                    ctx.fillStyle = `rgba(168, 85, 247, ${barHeight / 200})` // Purple
+                    ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2)
+                    x += barWidth + 1
+                }
+            } else {
+                // User Mic Input
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = (dataArray[i] / 255) * canvas.height
+
+                    // Dynamic color based on volume
+                    const r = barHeight + (25 * (i / bufferLength))
+                    const g = 250 * (i / bufferLength)
+                    const b = 50
+
+                    ctx.fillStyle = `rgb(${r},${g},${b})`
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
+
+                    x += barWidth + 1
+                }
+            }
+        }
+
+        draw()
+
+        return () => {
+            cancelAnimationFrame(animationId)
+            audioContext.close()
+        }
+    }, [stream, isAISpeaking, aiVolume])
+
+    // --- Speech Recognition ---
     useEffect(() => {
         if (typeof window !== "undefined") {
-            // @ts-ignore
             // @ts-ignore
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
             if (SpeechRecognition) {
@@ -91,33 +167,19 @@ export function ActiveSession({
                 recognition.lang = language === "ar" ? "ar-EG" : "en-US"
 
                 recognition.onstart = () => {
-                    console.log("Speech recognition started")
                     setIsListening(true)
-                    // Interruption: Stop AI speech when user starts speaking
+                    // Auto-stop AI speech if user interrupts
                     if (window.speechSynthesis) {
                         window.speechSynthesis.cancel()
                         setIsAISpeaking(false)
                     }
                 }
 
-                recognition.onend = () => {
-                    console.log("Speech recognition ended")
-                    setIsListening(false)
-                    // Auto-restart ONLY if we intended to facilitate continuous listening
-                    // checking a ref or state would be better here to avoid loops
-                }
-
-                recognition.onerror = (event: any) => {
-                    console.error("Speech recognition error", event.error)
-                    setIsListening(false)
-                    if (event.error !== "aborted" && event.error !== "no-speech") {
-                        toast.error(`Mic Error: ${event.error}`)
-                    }
-                }
+                recognition.onend = () => setIsListening(false)
 
                 recognition.onresult = (event: any) => {
-                    // Interruption: Double check cancellation
-                    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+                    // Interrupt AI if speaking
+                    if (window.speechSynthesis?.speaking) {
                         window.speechSynthesis.cancel()
                         setIsAISpeaking(false)
                     }
@@ -131,79 +193,45 @@ export function ActiveSession({
                             interim += event.results[i][0].transcript
                         }
                     }
-
                     setInterimTranscript(interim)
-
                     if (final) {
-                        setTranscript(prev => {
-                            const newVal = prev ? `${prev} ${final}` : final
-                            return newVal
-                        })
+                        setTranscript(prev => `${prev} ${final}`)
                     }
                 }
-
                 recognitionRef.current = recognition
             }
-
             synthRef.current = window.speechSynthesis
         }
     }, [language])
 
-    // Auto-restart logic based on "shouldBeListening"
+    // --- Auto-Restart Logic ---
     useEffect(() => {
         if (!recognitionRef.current) return
-
         if (shouldBeListening && !isListening) {
-            try {
-                recognitionRef.current.start()
-            } catch (e) {
-                // ignore if already started
-            }
+            try { recognitionRef.current.start() } catch (e) { }
         } else if (!shouldBeListening && isListening) {
             recognitionRef.current.stop()
         }
     }, [shouldBeListening, isListening])
 
 
-    const startSession = () => {
-        setAudioContextReady(true)
-        setShouldBeListening(true) // Start listening
-        // Trigger initial greeting if empty
-        if (messages.length === 0) {
-            handleSendMessage("", true)
-        }
-    }
-
-    const captureFrame = () => {
-        if (!videoRef.current) return null
-        const canvas = document.createElement("canvas")
-        canvas.width = videoRef.current.videoWidth
-        canvas.height = videoRef.current.videoHeight
-        const ctx = canvas.getContext("2d")
-        ctx?.drawImage(videoRef.current, 0, 0)
-        return canvas.toDataURL("image/jpeg").split(",")[1] // base64
-    }
-
+    // --- Speak Function ---
     const speak = (text: string) => {
-        if (!synthRef.current) return
+        if (!synthRef.current || isMuted) return
 
-        // Cancel previous
         synthRef.current.cancel()
-
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = language === "ar" ? "ar-EG" : "en-US"
+        utterance.rate = 0.95 // Natural pace
+        utterance.pitch = 1
+        utterance.volume = aiVolume
 
-        // Improved Voice Selection
+        // Voice Selection Strategy
         const voices = synthRef.current.getVoices()
-        // Priority: Google -> Microsoft -> any matching lang
-        const preferredVoice = voices.find(v => v.lang.includes(language === "ar" ? "ar" : "en") && v.name.includes("Google"))
-            || voices.find(v => v.lang.includes(language === "ar" ? "ar" : "en") && v.name.includes("Microsoft"))
+        const preferredVoice = voices.find(v => v.name.includes("Google") && v.lang.includes(language === "ar" ? "ar" : "en"))
             || voices.find(v => v.lang.includes(language === "ar" ? "ar" : "en"))
 
         if (preferredVoice) utterance.voice = preferredVoice
-
-        utterance.pitch = 1
-        utterance.rate = 1
 
         utterance.onstart = () => setIsAISpeaking(true)
         utterance.onend = () => setIsAISpeaking(false)
@@ -211,28 +239,38 @@ export function ActiveSession({
         synthRef.current.speak(utterance)
     }
 
+    // --- Toggle Listening/Mute ---
+    const toggleMic = () => {
+        if (shouldBeListening) {
+            setShouldBeListening(false)
+            setAudioAllowed(false)
+        } else {
+            setShouldBeListening(true)
+            setAudioAllowed(true)
+            // Initial greeting if empty
+            if (messages.length === 0) handleSendMessage("", true)
+        }
+    }
+
+    // --- Send Message ---
     const handleSendMessage = async (textOverride?: string, isInitial = false) => {
-        const textToSend = textOverride !== undefined ? textOverride : transcript
+        const textToSend = textOverride !== undefined ? textOverride : (manualInput || transcript)
+
         if (!textToSend.trim() && !isInitial) return
 
         setIsAIProcessing(true)
-        setTranscript("") // Clear input
+        setTranscript("")
         setInterimTranscript("")
+        setManualInput("")
 
-        // Stop listening while processing to avoid echoes/loops
-        if (shouldBeListening) {
-            setShouldBeListening(false) // Temporarily stop
-        }
+        // Pause listening
+        setShouldBeListening(false)
 
-        // Add user message to history (unless initial trigger)
         const newHistory = isInitial ? [] : [...messages, { role: "user" as const, content: textToSend }]
         if (!isInitial) setMessages(newHistory)
 
         try {
-            // Optional: Capture frame every few turns or always? 
-            // Let's capture active frame
             const imageBase64 = captureFrame()
-
             const backendBase = getBackendBase()
             const res = await fetch(`${backendBase}/api/interview/chat`, {
                 method: "POST",
@@ -241,7 +279,7 @@ export function ActiveSession({
                     messages: newHistory,
                     job_description: jobDescription,
                     language,
-                    image_base64: imageBase64 // Send vision!
+                    image_base64: imageBase64
                 })
             })
 
@@ -255,198 +293,254 @@ export function ActiveSession({
             speak(aiReply)
 
         } catch (err) {
-            console.error(err)
-            toast.error("Failed to connect to Interviewer")
+            toast.error("Connection failed")
         } finally {
             setIsAIProcessing(false)
-            setShouldBeListening(true) // Resume listening automatically
+            // Resume listening if we were allowed before, unless user manually stopped
+            if (audioAllowed) setShouldBeListening(true)
         }
     }
 
-    const toggleListening = () => {
-        setShouldBeListening(prev => !prev)
+    const captureFrame = () => {
+        if (!videoRef.current) return null
+        const canvas = document.createElement("canvas")
+        canvas.width = videoRef.current.videoWidth
+        canvas.height = videoRef.current.videoHeight
+        canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0)
+        return canvas.toDataURL("image/jpeg").split(",")[1]
     }
 
+    // Auto-scroll transcript
+    useEffect(() => {
+        const viewport = document.getElementById("transcript-viewport")
+        if (viewport) viewport.scrollTop = viewport.scrollHeight
+    }, [messages, interimTranscript])
+
+
     return (
-        <motion.div
-            className="flex h-[calc(100vh-4rem)] w-full flex-col items-center justify-between p-4 relative overflow-hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            {/* Context / Header */}
-            <div className="absolute top-4 left-4 z-20 flex cursor-pointer items-center gap-2 rounded-full bg-background/60 px-4 py-2 text-sm text-foreground/80 backdrop-blur-md hover:bg-background/80 border border-border" onClick={onEnd}>
-                <X className="h-4 w-4" />
-                <span>End Session</span>
-            </div>
+        <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
 
-            {/* Avatar Centerpiece */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl relative">
+            {/* --- LEFT PANE: Avatar & Video --- */}
+            <div className="w-[50%] flex flex-col items-center justify-between border-r border-border bg-gradient-to-br from-card/50 via-background to-background relative p-6">
 
-                {/* The Flowing Sphere - Simplified Visuals */}
-                <div className="relative flex items-center justify-center">
+                {/* Header Overlay */}
+                <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+                    <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary px-3 py-1 text-xs uppercase tracking-wider">
+                        Live Session
+                    </Badge>
+                    <span className="text-sm font-mono text-muted-foreground">{formatTime(sessionDuration)}</span>
+                </div>
 
-                    {/* Clean Gradient Glow instead of blobs */}
-                    <div className={cn(
-                        "absolute inset-0 bg-primary/20 blur-[100px] rounded-full transition-all duration-1000",
-                        isAISpeaking ? "scale-150 opacity-40" : "scale-100 opacity-20"
-                    )} />
+                {/* End Session Button */}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-6 right-6 z-20 hover:bg-red-500/10 hover:text-red-500 text-muted-foreground"
+                    onClick={onEnd}
+                >
+                    <X className="mr-2 h-4 w-4" />
+                    End
+                </Button>
 
-                    {/* Core Sphere */}
+                {/* Avatar Centerpiece */}
+                <div className="flex-1 flex flex-col items-center justify-center relative w-full">
+                    {/* The Sphere */}
                     <motion.div
                         animate={{
-                            scale: isAISpeaking ? [1, 1.1, 1] : [1, 1.02, 1],
-                            filter: isAISpeaking ? "brightness(1.2)" : "brightness(1)",
+                            scale: isAISpeaking ? [1, 1.05, 1] : [1, 1.02, 1],
+                            filter: isAISpeaking ? "brightness(1.3) drop-shadow(0 0 20px rgba(168,85,247,0.4))" : "brightness(1) drop-shadow(0 0 10px rgba(168,85,247,0.1))",
                         }}
-                        transition={{
-                            duration: isAISpeaking ? 0.5 : 4,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                        className={cn(
-                            "h-56 w-56 rounded-full bg-gradient-to-br from-primary via-indigo-500 to-purple-600 shadow-2xl shadow-primary/30",
-                            "relative z-10 flex items-center justify-center"
-                        )}
+                        transition={{ duration: isAISpeaking ? 0.4 : 3, repeat: Infinity, ease: "easeInOut" }}
+                        className="h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative z-10 flex items-center justify-center"
                     >
-                        {/* Simple reflection */}
-                        <div className="absolute top-0 right-0 h-full w-full rounded-full bg-gradient-to-bl from-white/20 to-transparent" />
+                        {/* Shine */}
+                        <div className="absolute top-0 right-0 w-full h-full rounded-full bg-gradient-to-bl from-white/30 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 rounded-full border border-white/10" />
                     </motion.div>
 
-                    {/* Orbiting Particles */}
-                    <Particles active={isAISpeaking} />
-                </div>
-
-                {/* Start Overlay */}
-                {!audioContextReady && (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                        <Button size="lg" onClick={startSession} className="text-lg px-8 py-6 rounded-full shadow-2xl animate-bounce">
-                            Start Interview
-                        </Button>
-                    </div>
-                )}
-
-                {/* AI Captions */}
-                <AnimatePresence mode="wait">
-                    {lastAIResponseRef.current && (
-                        <motion.div
-                            key={lastAIResponseRef.current}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="mt-12 max-w-2xl text-center z-10"
-                        >
-                            <p className="text-xl md:text-2xl font-medium leading-relaxed text-foreground/90 drop-shadow-sm">
-                                "{lastAIResponseRef.current}"
-                            </p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* User Controls & Camera */}
-            <div className="w-full max-w-3xl flex flex-col items-center gap-6 z-10 pb-4">
-
-                {/* Transcript Preview */}
-                <div className={cn(
-                    "w-full rounded-xl bg-card/60 p-4 backdrop-blur-md border border-border/50 transition-all text-center min-h-[60px] flex items-center justify-center flex-col gap-2",
-                    (transcript || interimTranscript) ? "opacity-100" : "opacity-0 h-0 p-0 overflow-hidden"
-                )}>
-                    <p className="text-foreground/90 font-medium">{transcript} <span className="text-muted-foreground">{interimTranscript}</span></p>
-                    {shouldBeListening && volume > 10 && (
-                        <div className="flex gap-1 h-1 items-end justify-center">
-                            {[...Array(5)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    className="w-1 bg-green-500 rounded-full"
-                                    animate={{ height: Math.min(20, Math.max(4, volume / (2 * (i + 1)))) }}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Control Bar */}
-                <div className="flex items-center gap-6">
-                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-border bg-black/50 shadow-lg">
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            muted
-                            playsInline
-                            className="h-full w-full object-cover transform scale-x-[-1]"
-                        />
-                    </div>
-
-                    <div className="relative">
-                        {shouldBeListening && (
-                            <span className={cn(
-                                "absolute inset-0 animate-ping rounded-full opacity-75",
-                                volume > 20 ? "bg-green-500" : "bg-red-500"
-                            )}></span>
+                    {/* Status Text */}
+                    <div className="mt-8 text-center h-8">
+                        {isAISpeaking ? (
+                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-primary font-medium animate-pulse">
+                                AI Interviewer is speaking...
+                            </motion.p>
+                        ) : isAIProcessing ? (
+                            <p className="text-muted-foreground animate-pulse">Thinking...</p>
+                        ) : isListening ? (
+                            <p className="text-emerald-500 font-medium">Listening to you...</p>
+                        ) : (
+                            <p className="text-muted-foreground">Mic paused</p>
                         )}
+                    </div>
+                </div>
+
+                {/* Bottom Control Bar */}
+                <div className="w-full max-w-md bg-card/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col gap-4 shadow-xl">
+
+                    {/* Waveform Canvas */}
+                    <div className="h-16 w-full bg-black/20 rounded-lg overflow-hidden relative">
+                        <canvas ref={canvasRef} width={400} height={64} className="w-full h-full" />
+                    </div>
+
+                    {/* Controls Row */}
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Mic Control */}
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="icon"
+                                variant={shouldBeListening ? "destructive" : "secondary"}
+                                onClick={toggleMic}
+                                className={cn("h-12 w-12 rounded-full transition-all shadow-lg", shouldBeListening && "animate-pulse")}
+                            >
+                                {shouldBeListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                            </Button>
+                            {/* User Video PiP */}
+                            <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-border bg-black">
+                                <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover scale-x-[-1]" />
+                            </div>
+                        </div>
+
+                        {/* Session Controls */}
+                        <div className="flex items-center gap-2">
+                            {/* AI Volume */}
+                            <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-3 py-1.5">
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6"
+                                    onClick={() => setAiVolume(v => v === 0 ? 1 : 0)}
+                                >
+                                    {aiVolume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                                </Button>
+                                <Slider
+                                    value={[aiVolume]}
+                                    max={1}
+                                    step={0.1}
+                                    onValueChange={([v]) => setAiVolume(v)}
+                                    className="w-20"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Send Trigger (Mobile/Manual) */}
                         <Button
                             size="icon"
-                            variant={shouldBeListening ? "destructive" : "secondary"}
-                            className={cn(
-                                "relative h-16 w-16 rounded-full shadow-xl transition-all duration-300 z-10",
-                                shouldBeListening ? "bg-red-500 hover:bg-red-600 text-white" : "bg-secondary hover:bg-secondary/80 text-muted-foreground"
-                            )}
-                            onClick={toggleListening}
+                            className="h-12 w-12 rounded-full"
+                            onClick={() => handleSendMessage()}
+                            disabled={isAIProcessing || (!transcript && !manualInput)}
                         >
-                            {shouldBeListening ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+                            <Send className="h-5 w-5" />
                         </Button>
-                        {/* Audio Bar Overlay */}
-                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
-                            Vol: {Math.round(volume)}
-                        </div>
                     </div>
-
-                    <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                        onClick={() => handleSendMessage()}
-                        disabled={!transcript.trim() || isAIProcessing}
-                    >
-                        <MessageSquare className="h-5 w-5" />
-                    </Button>
                 </div>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
-                    {shouldBeListening ? "Listening..." : "Mic Muted"}
-                </p>
             </div>
-        </motion.div>
-    )
-}
 
-function Particles({ active }: { active: boolean }) {
-    // Generate some random particles
-    return (
-        <div className="absolute inset-0 pointer-events-none">
-            {[...Array(6)].map((_, i) => (
-                <motion.div
-                    key={i}
-                    className="absolute bg-white/40 rounded-full blur-[1px]"
-                    style={{
-                        height: Math.random() * 8 + 4,
-                        width: Math.random() * 8 + 4,
-                        left: "50%",
-                        top: "50%",
-                    }}
-                    animate={{
-                        x: [0, (Math.random() - 0.5) * 300],
-                        y: [0, (Math.random() - 0.5) * 300],
-                        opacity: [0, 1, 0],
-                        scale: active ? [1, 1.5, 0] : [1, 1, 0]
-                    }}
-                    transition={{
-                        duration: active ? 2 + Math.random() : 4 + Math.random(),
-                        repeat: Infinity,
-                        delay: Math.random() * 2,
-                        ease: "easeOut"
-                    }}
-                />
-            ))}
+            {/* --- RIGHT PANE: Transcript & Input --- */}
+            <div className="w-[50%] flex flex-col bg-card/10 backdrop-blur-sm border-l border-white/5">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-card/20">
+                    <h3 className="font-semibold flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-primary" />
+                        Transcript
+                    </h3>
+                    <Badge variant="outline" className="text-xs font-mono">{messages.length} messages</Badge>
+                </div>
+
+                {/* Messages List using div overflow instead of ScrollArea to ensure standard behavior if component missing */}
+                <div id="transcript-viewport" className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                    {messages.length === 0 && (
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 space-y-2">
+                            <Cpu className="h-12 w-12" />
+                            <p>Conversation will appear here...</p>
+                        </div>
+                    )}
+
+                    {messages.map((msg, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={cn(
+                                "flex gap-4 max-w-[90%]",
+                                msg.role === "user" ? "ml-auto flex-row-reverse" : ""
+                            )}
+                        >
+                            <div className={cn(
+                                "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+                                msg.role === "user" ? "bg-primary/20 text-primary" : "bg-purple-500/20 text-purple-500"
+                            )}>
+                                {msg.role === "user" ? <User className="h-4 w-4" /> : <Cpu className="h-4 w-4" />}
+                            </div>
+
+                            <div className={cn(
+                                "rounded-2xl p-4 text-sm leading-relaxed",
+                                msg.role === "user"
+                                    ? "bg-primary/10 text-foreground rounded-tr-none border border-primary/20"
+                                    : "bg-card border border-border rounded-tl-none shadow-sm"
+                            )}>
+                                {msg.content}
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {/* Interim Result */}
+                    {(transcript || interimTranscript) && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex gap-4 ml-auto flex-row-reverse max-w-[90%]"
+                        >
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-primary animate-pulse">
+                                <User className="h-4 w-4" />
+                            </div>
+                            <div className="rounded-2xl p-4 text-sm bg-primary/5 border border-dashed border-primary/20 text-muted-foreground rounded-tr-none">
+                                {transcript} <span className="opacity-50">{interimTranscript}</span>
+                                <span className="inline-block w-2 H-4 bg-primary align-middle ml-1 animate-pulse">|</span>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {isAIProcessing && (
+                        <div className="flex gap-4 max-w-[90%]">
+                            <div className="h-8 w-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-500 animate-spin">
+                                <RotateCcw className="h-4 w-4" />
+                            </div>
+                            <div className="flex gap-1 items-center h-10 px-4 rounded-full bg-card border border-border">
+                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Input Area */}
+                <div className="p-4 border-t border-border bg-card/30 backdrop-blur-md">
+                    <div className="relative">
+                        <Textarea
+                            value={manualInput}
+                            onChange={(e) => setManualInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault()
+                                    handleSendMessage()
+                                }
+                            }}
+                            placeholder={shouldBeListening ? "Typing disabled while Mic is on..." : "Type your response here..."}
+                            disabled={shouldBeListening}
+                            className="min-h-[50px] max-h-[150px] pr-12 bg-background/50 border-white/10 resize-none focus:ring-primary/20"
+                        />
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute bottom-2 right-2 h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={() => handleSendMessage()}
+                            disabled={!manualInput.trim()}
+                        >
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

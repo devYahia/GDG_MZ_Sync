@@ -13,6 +13,7 @@ import {
 
 import { FIELD_CONFIG, TASKS, type TaskField } from "@/lib/tasks"
 import { ProjectGallery } from "@/components/dashboard/ProjectGallery"
+import { QuickStartActions } from "@/components/dashboard/QuickStartActions"
 import { cn } from "@/lib/utils"
 
 const levelLabels: Record<string, string> = {
@@ -25,9 +26,10 @@ interface DashboardClientProps {
     userName: string
     fieldKey: string
     experienceLevel: string
+    showQuickStart?: boolean
 }
 
-export function DashboardClient({ userName, fieldKey, experienceLevel }: DashboardClientProps) {
+export function DashboardClient({ userName, fieldKey, experienceLevel, showQuickStart }: DashboardClientProps) {
     const fieldConfig = FIELD_CONFIG[(fieldKey as TaskField) ?? "frontend"]
     const FieldIcon = fieldConfig?.icon
     const firstName = userName?.split(" ")[0] ?? "there"
@@ -138,6 +140,17 @@ export function DashboardClient({ userName, fieldKey, experienceLevel }: Dashboa
                     </div>
                 </motion.section>
 
+                {showQuickStart && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <h2 className="text-xl font-bold mb-6">Recommended for You</h2>
+                        <QuickStartActions user={{ field: fieldKey, experienceLevel }} />
+                    </motion.div>
+                )}
+
                 {/* ── Stats Strip ── */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {stats.map((stat, i) => {
@@ -170,6 +183,6 @@ export function DashboardClient({ userName, fieldKey, experienceLevel }: Dashboa
                 {/* ── Project Gallery ── */}
                 <ProjectGallery />
             </div>
-        </div>
+        </div >
     )
 }

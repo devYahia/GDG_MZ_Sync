@@ -196,6 +196,29 @@
       width: 100%;
     }
   }
+
+  .glass-shimmer {
+    @apply relative overflow-hidden;
+  }
+  
+  .glass-shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 92, 246, 0.08) 40%,
+      rgba(139, 92, 246, 0.15) 50%,
+      rgba(139, 92, 246, 0.08) 60%,
+      transparent 100%
+    );
+    animation: glass-shimmer 2s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes glass-shimmer {
+    100% { transform: translateX(100%); }
+  }
 }
 
 /* Hide Unicorn Studio Badge -- blanket rule */

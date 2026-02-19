@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -9,21 +10,24 @@ interface DashboardWithOnboardingProps {
     userName: string
     fieldKey: string
     experienceLevel: string
+    onboardingCompleted: boolean
 }
 
 export function DashboardWithOnboarding({
     userName,
     fieldKey,
     experienceLevel,
+    onboardingCompleted,
 }: DashboardWithOnboardingProps) {
     const router = useRouter()
-    const [onboardingComplete, setOnboardingComplete] = useState(false)
+    const [justFinished, setJustFinished] = useState(false)
 
     const handleOnboardingComplete = () => {
-        setOnboardingComplete(true)
-        // Refresh to get updated profile data
+        setJustFinished(true)
         router.refresh()
     }
+
+    const showOnboarding = !onboardingCompleted && !justFinished
 
     return (
         <>
@@ -31,10 +35,11 @@ export function DashboardWithOnboarding({
                 userName={userName}
                 fieldKey={fieldKey}
                 experienceLevel={experienceLevel}
+                showQuickStart={justFinished} // Only show if they just finished in this session
             />
             <LiquidGlassBubble
                 userName={userName}
-                showOnboarding={!onboardingComplete}
+                showOnboarding={showOnboarding}
                 onComplete={handleOnboardingComplete}
             />
         </>

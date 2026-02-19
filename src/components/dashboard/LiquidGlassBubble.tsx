@@ -128,7 +128,7 @@ export function LiquidGlassBubble({ userName, showOnboarding, onComplete }: Liqu
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.8, opacity: 0, y: 50 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="fixed bottom-8 right-8 z-50 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-black/70 p-1 shadow-2xl backdrop-blur-2xl md:bottom-12 md:right-12"
+                        className="fixed inset-0 m-auto h-fit w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-black/70 p-1 shadow-2xl backdrop-blur-2xl"
                         style={{
                             boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1) inset"
                         }}
@@ -159,7 +159,7 @@ export function LiquidGlassBubble({ userName, showOnboarding, onComplete }: Liqu
                                 delay: 0.5
                             }}
                         />
-                        
+
                         {/* Liquid shimmer effect */}
                         <motion.div
                             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"

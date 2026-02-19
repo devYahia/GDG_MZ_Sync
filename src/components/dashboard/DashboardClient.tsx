@@ -10,8 +10,6 @@ import {
 import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 import { QuickStartActions } from "@/components/dashboard/QuickStartActions"
 import { ContinueSection } from "@/components/dashboard/ContinueSection"
-import { DiscoverSection } from "@/components/dashboard/DiscoverSection"
-import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline"
 import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot"
 import { SimulationTemplates } from "@/components/dashboard/SimulationTemplates"
 import { cn } from "@/lib/utils"
@@ -29,7 +27,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ data, showQuickStart }: DashboardClientProps) {
-    const { user, xpProgress, inProgressProjects, recentActivity, earnedBadges, skillAverages, discoveredEventTypes } = data
+    const { user, xpProgress, inProgressProjects, earnedBadges, skillAverages } = data
     const fieldConfig = FIELD_CONFIG[(user.field as TaskField) ?? "frontend"]
     const FieldIcon = fieldConfig?.icon
     const firstName = user.name?.split(" ")[0] ?? "there"
@@ -130,16 +128,6 @@ export function DashboardClient({ data, showQuickStart }: DashboardClientProps) 
                 {/* -- Simulation Templates -- */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                     <SimulationTemplates userField={user.field} />
-                </motion.div>
-
-                {/* -- Discover Section -- */}
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <DiscoverSection discoveredEventTypes={discoveredEventTypes} />
-                </motion.div>
-
-                {/* -- Activity Timeline -- */}
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <ActivityTimeline activities={recentActivity} />
                 </motion.div>
             </div>
         </div>

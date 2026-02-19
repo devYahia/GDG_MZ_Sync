@@ -4,17 +4,19 @@ import { signOut, auth } from "@/infrastructure/auth/auth";
 import { container } from "@/infrastructure/container";
 import { CreateUserParams } from "@/domain/repositories/user-repository";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 
 export async function loginAction(prevState: string | undefined, formData: FormData) {
     try {
         await container.loginUseCase.execute(formData);
-        return undefined;
     } catch (error: any) {
         if (error.name === "AuthError") {
             return { error: error.message };
         }
         return { error: "Something went wrong." };
     }
+
+    redirect("/dashboard");
 }
 
 export async function signupAction(data: CreateUserParams & { password?: string }) {

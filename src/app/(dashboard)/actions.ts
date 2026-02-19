@@ -273,14 +273,6 @@ export interface DashboardData {
     };
     xpProgress: { currentLevel: number; nextLevel: number | null; progressPercent: number; xpToNext: number; currentLevelTitle: string };
     inProgressProjects: InProgressProject[];
-    recentActivity: Array<{
-        id: string;
-        eventType: string;
-        contextType: string | null;
-        contextId: string | null;
-        metadata: unknown;
-        createdAt: Date;
-    }>;
     earnedBadges: Array<{
         slug: string;
         title: string;
@@ -297,7 +289,6 @@ export interface DashboardData {
         professionalism: number;
         overallScore: number;
     } | null;
-    discoveredEventTypes: Set<string>;
 }
 
 export async function getDashboardData(): Promise<DashboardData | null> {
@@ -308,10 +299,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     const [
         userRec,
         progressRows,
-        recentActivityRows,
         earnedBadgeRows,
         skillAvgRows,
-        discoveredRows,
     ] = await Promise.all([
         // User profile
         db.query.users.findFirst({ where: eq(users.id, userId) }),
@@ -322,13 +311,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
             .where(and(eq(internProgress.userId, userId), eq(internProgress.status, "in_progress")))
             .orderBy(desc(internProgress.lastActivityAt))
             .limit(5),
-
-        // Recent activity (last 10)
-        db.select()
-            .from(activityLog)
-            .where(eq(activityLog.userId, userId))
-            .orderBy(desc(activityLog.createdAt))
-            .limit(10),
 
         // Earned badges (join user_achievements -> achievements)
         db.select({
@@ -355,11 +337,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         })
             .from(skillScores)
             .where(eq(skillScores.userId, userId)),
-
-        // Distinct event types user has tried
-        db.selectDistinct({ eventType: activityLog.eventType })
-            .from(activityLog)
-            .where(eq(activityLog.userId, userId)),
     ]);
 
     if (!userRec) return null;
@@ -390,8 +367,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         }
         : null;
 
-    const discoveredEventTypes = new Set(discoveredRows.map((r) => r.eventType));
-
     const xpProgress = getXpProgress(userRec.xp ?? 0);
 
     return {
@@ -407,10 +382,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         },
         xpProgress,
         inProgressProjects,
-        recentActivity: recentActivityRows,
         earnedBadges: earnedBadgeRows,
         skillAverages,
-        discoveredEventTypes,
     };
 }
 

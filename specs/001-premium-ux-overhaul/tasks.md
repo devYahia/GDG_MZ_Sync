@@ -125,7 +125,7 @@
 
 ### Implementation
 
-- [x] T038 [US5] Fix API endpoint (update `/review` to `/api/review`) and harmonize theme (use global tokens), then redesign the streaming progress section in `src/app/(dashboard)/code-review/page.tsx` with a vertical timeline and step icons.
+- [ ] T038 [US5] Fix API endpoint (update `/review` to `/api/review`) and harmonize theme (use global tokens), then redesign the streaming progress section in `src/app/(dashboard)/code-review/page.tsx` with a vertical timeline and step icons.
 - [ ] T039 [US5] Redesign the report display section in `src/app/(dashboard)/code-review/page.tsx` to use Shadcn Accordion for per-file analysis, color-coded severity badges (critical/warning/info), and an overall grade hero card with glass-card styling
 - [ ] T040 [US5] Add activity logging to code review: call `logActivity` with "code_review_requested" on review start and "code_review_completed" on report render, passing the job_id as contextId
 

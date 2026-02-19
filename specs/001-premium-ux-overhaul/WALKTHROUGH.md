@@ -33,6 +33,9 @@ This document tracks the implementation progress for the Premium UX Overhaul tas
 - **Logic**: Detected temporary simulation IDs (starting with `temp-`) returned by backend upon DB failure.
 - **UX**: Prevented navigation to broken `[id]` routes; instead, shows a "Preview Mode Only" toast warning.
 
+## Bug Fixes
+- **Login Redirection (US1/Auth)**: Fixed an issue where logging in required a manual refresh to reach the dashboard. Added an explicit `redirect("/dashboard")` call to `loginAction` in `src/app/actions/auth-actions.ts`.
+
 ## Verification Steps
 1.  **Dashboard**: Verify "Simulation Templates" appear and filter correctly.
 2.  **Interview**: Start a session, check waveform reacts to mic, timer counts up, and layout is split.

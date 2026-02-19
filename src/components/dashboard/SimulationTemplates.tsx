@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "motion/react"
-import { ArrowRight, Clock, Star, Zap, Code, Layout, Database, Server, Smartphone, BarChart3, Palette, Shield, Layers } from "lucide-react"
+import { ArrowRight, Clock, Star, Zap, Code, Layout, Database, Server, Smartphone, BarChart3, Palette, Shield, Layers, Search, Filter } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
     TASKS,
     FIELD_CONFIG,
@@ -22,40 +22,70 @@ interface SimulationTemplatesProps {
 }
 
 export function SimulationTemplates({ userField }: SimulationTemplatesProps) {
-    const [showAll, setShowAll] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+    const searchInputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+                e.preventDefault()
+                searchInputRef.current?.focus()
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [])
 
     // Normalize user field to TaskField or default to frontend if unknown
     const normalizedField = (userField?.toLowerCase() as TaskField) || "frontend"
 
-    // Filter tasks
-    const relevantTasks = TASKS.filter(t => t.field === normalizedField)
-    const otherTasks = TASKS.filter(t => t.field !== normalizedField)
+    // Filter tasks based on search query
+    const displayTasks = TASKS.filter(task => {
+        const matchesSearch =
+            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.tools.some(tool => tool.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    // If no relevant tasks found (e.g. unknown field), show all
-    const displayTasks = showAll || relevantTasks.length === 0 ? TASKS : relevantTasks
-    const hasMore = relevantTasks.length > 0 && otherTasks.length > 0
+        return matchesSearch
+    }).sort((a, b) => {
+        // Sort recommended field tasks to the top
+        if (a.field === normalizedField && b.field !== normalizedField) return -1
+        if (a.field !== normalizedField && b.field === normalizedField) return 1
+        return 0
+    })
 
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between">
+        <section className="space-y-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-1">
-                    <h2 className="text-xl font-bold tracking-tight">Simulation Templates</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground">Simulation Templates</h2>
                     <p className="text-sm text-muted-foreground">
-                        Real-world scenarios tailored to your {showAll ? "skills" : "specialization"}
+                        Real-world scenarios to sharpen your engineering skills.
                     </p>
                 </div>
-                {hasMore && (
-                    <Button
-                        variant="ghost"
-                        onClick={() => setShowAll(!showAll)}
-                        className="text-sm"
-                    >
-                        {showAll ? "Show Recommended" : "Explore All"}
-                    </Button>
-                )}
+
+                <div className="relative w-full md:max-w-md group">
+                    <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-4 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Search by name, tech stack, or tag..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-12 pl-11 pr-4 rounded-2xl border-border/50 bg-card/50 backdrop-blur-sm focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-sm shadow-sm"
+                        />
+                        <div className="absolute right-3 flex items-center gap-1">
+                            <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded border border-border bg-muted/50 text-[10px] text-muted-foreground font-medium">
+                                ⌘ K
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-10">
                 <AnimatePresence mode="popLayout">
                     {displayTasks.map((task, i) => {
                         const fieldConfig = FIELD_CONFIG[task.field]
@@ -82,9 +112,14 @@ export function SimulationTemplates({ userField }: SimulationTemplatesProps) {
                                                 <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-transform group-hover:scale-110", fieldConfig.bg)}>
                                                     <FieldIcon className={cn("h-6 w-6", fieldConfig.color)} />
                                                 </div>
-                                                <Badge variant="outline" className={cn("capitalize border-white/10 bg-black/20", difficultyConfig.color)}>
-                                                    {difficultyConfig.label}
-                                                </Badge>
+                                                <div className="flex flex-col items-end gap-1.5">
+                                                    <Badge variant="outline" className={cn("capitalize border-white/10 bg-black/20", difficultyConfig.color)}>
+                                                        {difficultyConfig.label}
+                                                    </Badge>
+                                                    {task.field === normalizedField && (
+                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Recommended</span>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Content */}

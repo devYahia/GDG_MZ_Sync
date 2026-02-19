@@ -32,6 +32,7 @@ const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/dashboard/projects", label: "My Projects", icon: FolderKanban, exact: false },
   { href: "/ide", label: "IDE", icon: Code2, exact: false },
+  { href: "/code-review", label: "AI Code Review", icon: GitPullRequest, exact: false },
   { href: "/dashboard/progress", label: "My Progress", icon: Target, exact: false },
   { href: "/dashboard/resources", label: "Resources", icon: BookOpen, exact: false },
   { href: "/dashboard/interview", label: "Interview Practice", icon: Mic, exact: false },

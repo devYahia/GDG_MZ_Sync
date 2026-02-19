@@ -65,21 +65,21 @@ export function SimulationTemplates({ userField }: SimulationTemplatesProps) {
                 </div>
 
                 <div className="relative w-full md:max-w-md group">
-                    <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-primary/5 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                     <div className="relative flex items-center">
                         <Search className="absolute left-4 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input
                             ref={searchInputRef}
                             type="text"
-                            placeholder="Search by name, tech stack, or tag..."
+                            placeholder="Search templates & stacks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-12 pl-11 pr-4 rounded-2xl border-border/50 bg-card/50 backdrop-blur-sm focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-sm shadow-sm"
+                            className="h-11 pl-11 pr-12 rounded-full border-white/10 bg-white/5 backdrop-blur-md focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-sm shadow-sm hover:bg-white/10"
                         />
-                        <div className="absolute right-3 flex items-center gap-1">
-                            <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded border border-border bg-muted/50 text-[10px] text-muted-foreground font-medium">
-                                ⌘ K
-                            </div>
+                        <div className="absolute right-3 hidden sm:flex items-center gap-1 opacity-50">
+                            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                                <span className="text-xs">⌘</span>K
+                            </kbd>
                         </div>
                     </div>
                 </div>

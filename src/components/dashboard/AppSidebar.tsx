@@ -14,6 +14,7 @@ import {
   Target,
   Code2,
   Mic,
+  GitPullRequest,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { logoutAction } from "@/app/actions/auth-actions"

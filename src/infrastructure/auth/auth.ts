@@ -26,17 +26,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
 
-                    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-                    const user = result[0];
+                    console.log(`[Auth] Attempting login for email: ${email}`);
 
-                    if (!user) return null;
-                    if (!user.hashedPassword) return null; // OAuth users have no password
+                    try {
+                        const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+                        const user = result[0];
 
-                    const passwordsMatch = await bcrypt.compare(password, user.hashedPassword);
-                    if (passwordsMatch) return user;
+                        if (!user) {
+                            console.log(`[Auth] User not found for email: ${email}`);
+                            return null;
+                        }
+
+                        if (!user.hashedPassword) {
+                            console.log(`[Auth] User has no password (OAuth user): ${email}`);
+                            return null;
+                        }
+
+                        const passwordsMatch = await bcrypt.compare(password, user.hashedPassword);
+                        if (passwordsMatch) {
+                            console.log(`[Auth] Login successful for email: ${email}`);
+                            return user;
+                        } else {
+                            console.log(`[Auth] Password mismatch for email: ${email}`);
+                        }
+                    } catch (error) {
+                        console.error("[Auth] Database error during login:", error);
+                        return null;
+                    }
                 }
 
-                console.log("Invalid credentials");
+                console.log("Invalid credentials or validation failed");
                 return null;
             },
         }),

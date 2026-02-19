@@ -1,7 +1,7 @@
-
 import { redirect } from "next/navigation"
 import { auth } from "@/infrastructure/auth/auth"
 import { container } from "@/infrastructure/container"
+import { getDashboardData } from "@/app/(dashboard)/actions"
 import { DashboardWithOnboarding } from "@/components/dashboard/DashboardWithOnboarding"
 
 export default async function DashboardPage() {
@@ -11,12 +11,13 @@ export default async function DashboardPage() {
     const user = await container.userRepository.findById(session.user.id)
     if (!user) redirect("/login")
 
+    const dashboardData = await getDashboardData()
+
     return (
         <DashboardWithOnboarding
             userName={user.name ?? user.email ?? "Developer"}
-            fieldKey={user.field ?? "frontend"}
-            experienceLevel={user.experienceLevel ?? "junior"}
             onboardingCompleted={user.onboardingCompleted ?? false}
+            dashboardData={dashboardData}
         />
     )
 }

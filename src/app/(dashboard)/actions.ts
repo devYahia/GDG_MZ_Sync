@@ -19,14 +19,15 @@ import { revalidatePath } from "next/cache";
 // ---------------------------------------------------------------------------
 // Activity Logging (T013)
 // ---------------------------------------------------------------------------
-export async function logActivity(input: {
-    userId: string;
-    eventType: string;
-    contextType?: string;
-    contextId?: string;
-    metadata?: Record<string, unknown>;
-}) {
-    const { userId, eventType, contextType, contextId, metadata } = input;
+export async function logActivity(
+    eventType: string,
+    contextType?: string,
+    contextId?: string,
+    metadata?: Record<string, unknown>,
+) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Not authenticated" };
 
     try {
         // 1. Insert activity log
@@ -76,7 +77,6 @@ export async function logActivity(input: {
 // Skill Scores (T014)
 // ---------------------------------------------------------------------------
 export async function saveSkillScores(input: {
-    userId: string;
     sourceType: string;
     sourceId?: string;
     communication: number;
@@ -87,8 +87,12 @@ export async function saveSkillScores(input: {
     professionalism: number;
     overallScore: number;
 }) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Not authenticated" };
+
     try {
-        await db.insert(skillScores).values(input);
+        await db.insert(skillScores).values({ ...input, userId });
         revalidatePath("/dashboard/progress");
         return { success: true };
     } catch (error) {
@@ -147,11 +151,7 @@ export async function updateOnboardingProfile(data: {
         }).where(eq(users.id, session.user.id));
 
         // Log the activity
-        await logActivity({
-            userId: session.user.id,
-            eventType: "onboarding_completed",
-            metadata: data,
-        });
+        await logActivity("onboarding_completed", undefined, undefined, data);
 
         revalidatePath("/dashboard");
         return { success: true };
@@ -242,4 +242,335 @@ async function checkAndAwardAchievements(userId: string) {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard Data Fetcher (T020)
+// ---------------------------------------------------------------------------
+import { avg, desc } from "drizzle-orm";
+import { TASKS } from "@/lib/tasks";
+import { getXpProgress } from "@/lib/xp";
+
+export interface InProgressProject {
+    projectId: string;
+    title: string;
+    field: string;
+    difficulty: string;
+    progressPercent: number;
+    lastActivityAt: Date | null;
+}
+
+export interface DashboardData {
+    user: {
+        name: string | null;
+        field: string;
+        experienceLevel: string;
+        xp: number;
+        currentLevel: number;
+        streakDays: number;
+        credits: number;
+        onboardingCompleted: boolean;
+    };
+    xpProgress: { currentLevel: number; nextLevel: number | null; progressPercent: number; xpToNext: number; currentLevelTitle: string };
+    inProgressProjects: InProgressProject[];
+    recentActivity: Array<{
+        id: string;
+        eventType: string;
+        contextType: string | null;
+        contextId: string | null;
+        metadata: unknown;
+        createdAt: Date;
+    }>;
+    earnedBadges: Array<{
+        slug: string;
+        title: string;
+        icon: string;
+        rarity: string;
+        unlockedAt: Date;
+    }>;
+    skillAverages: {
+        communication: number;
+        codeQuality: number;
+        requirementsGathering: number;
+        technicalDepth: number;
+        problemSolving: number;
+        professionalism: number;
+        overallScore: number;
+    } | null;
+    discoveredEventTypes: Set<string>;
+}
+
+export async function getDashboardData(): Promise<DashboardData | null> {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+    const userId = session.user.id;
+
+    const [
+        userRec,
+        progressRows,
+        recentActivityRows,
+        earnedBadgeRows,
+        skillAvgRows,
+        discoveredRows,
+    ] = await Promise.all([
+        // User profile
+        db.query.users.findFirst({ where: eq(users.id, userId) }),
+
+        // In-progress projects
+        db.select()
+            .from(internProgress)
+            .where(and(eq(internProgress.userId, userId), eq(internProgress.status, "in_progress")))
+            .orderBy(desc(internProgress.lastActivityAt))
+            .limit(5),
+
+        // Recent activity (last 10)
+        db.select()
+            .from(activityLog)
+            .where(eq(activityLog.userId, userId))
+            .orderBy(desc(activityLog.createdAt))
+            .limit(10),
+
+        // Earned badges (join user_achievements -> achievements)
+        db.select({
+            slug: achievements.slug,
+            title: achievements.title,
+            icon: achievements.icon,
+            rarity: achievements.rarity,
+            unlockedAt: userAchievements.unlockedAt,
+        })
+            .from(userAchievements)
+            .innerJoin(achievements, eq(achievements.id, userAchievements.achievementId))
+            .where(eq(userAchievements.userId, userId))
+            .orderBy(desc(userAchievements.unlockedAt)),
+
+        // Skill averages
+        db.select({
+            communication: avg(skillScores.communication),
+            codeQuality: avg(skillScores.codeQuality),
+            requirementsGathering: avg(skillScores.requirementsGathering),
+            technicalDepth: avg(skillScores.technicalDepth),
+            problemSolving: avg(skillScores.problemSolving),
+            professionalism: avg(skillScores.professionalism),
+            overallScore: avg(skillScores.overallScore),
+        })
+            .from(skillScores)
+            .where(eq(skillScores.userId, userId)),
+
+        // Distinct event types user has tried
+        db.selectDistinct({ eventType: activityLog.eventType })
+            .from(activityLog)
+            .where(eq(activityLog.userId, userId)),
+    ]);
+
+    if (!userRec) return null;
+
+    // Map in-progress projects against TASKS catalogue
+    const inProgressProjects: InProgressProject[] = progressRows.map((row) => {
+        const task = TASKS.find((t) => t.id === row.projectId);
+        return {
+            projectId: row.projectId,
+            title: task?.title ?? row.projectId,
+            field: task?.field ?? "frontend",
+            difficulty: task?.difficulty ?? "medium",
+            progressPercent: 30, // TODO: compute real progress from messages/reviews
+            lastActivityAt: row.lastActivityAt,
+        };
+    });
+
+    const avgRow = skillAvgRows[0];
+    const skillAverages = avgRow && avgRow.overallScore !== null
+        ? {
+            communication: Number(avgRow.communication) || 0,
+            codeQuality: Number(avgRow.codeQuality) || 0,
+            requirementsGathering: Number(avgRow.requirementsGathering) || 0,
+            technicalDepth: Number(avgRow.technicalDepth) || 0,
+            problemSolving: Number(avgRow.problemSolving) || 0,
+            professionalism: Number(avgRow.professionalism) || 0,
+            overallScore: Number(avgRow.overallScore) || 0,
+        }
+        : null;
+
+    const discoveredEventTypes = new Set(discoveredRows.map((r) => r.eventType));
+
+    const xpProgress = getXpProgress(userRec.xp ?? 0);
+
+    return {
+        user: {
+            name: userRec.name,
+            field: userRec.field ?? "frontend",
+            experienceLevel: userRec.experienceLevel ?? "student",
+            xp: userRec.xp ?? 0,
+            currentLevel: userRec.currentLevel ?? 1,
+            streakDays: userRec.streakDays ?? 0,
+            credits: userRec.credits ?? 0,
+            onboardingCompleted: userRec.onboardingCompleted ?? false,
+        },
+        xpProgress,
+        inProgressProjects,
+        recentActivity: recentActivityRows,
+        earnedBadges: earnedBadgeRows,
+        skillAverages,
+        discoveredEventTypes,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Save Interview Session (T033)
+// ---------------------------------------------------------------------------
+export async function saveInterviewSession(input: {
+    role: string;
+    difficulty: string;
+    focusAreas: string[];
+    transcript: unknown[];
+    feedbackScores: Record<string, number>;
+    overallRating: number;
+    durationMinutes: number;
+}) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Not authenticated" };
+
+    try {
+        await db.insert(interviewSessions).values({
+            userId,
+            role: input.role,
+            difficulty: input.difficulty,
+            focusAreas: input.focusAreas,
+            status: "completed",
+            transcript: input.transcript,
+            feedbackScores: input.feedbackScores,
+            overallRating: input.overallRating,
+            durationMinutes: input.durationMinutes,
+            completedAt: new Date(),
+        });
+
+        await logActivity("interview_completed", "interview", undefined, {
+            role: input.role,
+            overallRating: input.overallRating,
+        });
+
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/progress");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to save interview session:", error);
+        return { success: false, error: String(error) };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Progress Page Data (T041)
+// ---------------------------------------------------------------------------
+export interface ProgressPageData {
+    currentLevel: number;
+    xp: number;
+    xpProgress: { currentLevel: number; nextLevel: number | null; progressPercent: number; xpToNext: number; currentLevelTitle: string };
+    streakDays: number;
+    totalProjects: number;
+    totalReviews: number;
+    totalInterviews: number;
+    skillRadar: {
+        communication: number;
+        codeQuality: number;
+        requirementsGathering: number;
+        technicalDepth: number;
+        problemSolving: number;
+        professionalism: number;
+    } | null;
+    badges: Array<{
+        slug: string;
+        title: string;
+        description: string;
+        icon: string;
+        rarity: string;
+        earned: boolean;
+        unlockedAt: Date | null;
+    }>;
+}
+
+export async function getProgressData(): Promise<ProgressPageData | null> {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return null;
+
+    const userRec = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+    });
+    if (!userRec) return null;
+
+    // Count activities by type
+    const [projectCount] = await db
+        .select({ count: count() })
+        .from(activityLog)
+        .where(and(eq(activityLog.userId, userId), eq(activityLog.eventType, "simulation_completed")));
+
+    const [reviewCount] = await db
+        .select({ count: count() })
+        .from(activityLog)
+        .where(and(eq(activityLog.userId, userId), eq(activityLog.eventType, "code_review_completed")));
+
+    const [interviewCount] = await db
+        .select({ count: count() })
+        .from(activityLog)
+        .where(and(eq(activityLog.userId, userId), eq(activityLog.eventType, "interview_completed")));
+
+    // AVG skill scores
+    const skillAvgRows = await db
+        .select({
+            communication: avg(skillScores.communication),
+            codeQuality: avg(skillScores.codeQuality),
+            requirementsGathering: avg(skillScores.requirementsGathering),
+            technicalDepth: avg(skillScores.technicalDepth),
+            problemSolving: avg(skillScores.problemSolving),
+            professionalism: avg(skillScores.professionalism),
+        })
+        .from(skillScores)
+        .where(eq(skillScores.userId, userId));
+
+    const avgRow = skillAvgRows[0];
+    const skillRadar = avgRow && Number(avgRow.communication) > 0
+        ? {
+            communication: Number(avgRow.communication) || 0,
+            codeQuality: Number(avgRow.codeQuality) || 0,
+            requirementsGathering: Number(avgRow.requirementsGathering) || 0,
+            technicalDepth: Number(avgRow.technicalDepth) || 0,
+            problemSolving: Number(avgRow.problemSolving) || 0,
+            professionalism: Number(avgRow.professionalism) || 0,
+        }
+        : null;
+
+    // All badges with earned status
+    const allBadges = await db.select().from(achievements);
+    const earnedMap = new Map<string, Date>();
+    const earnedRows = await db
+        .select({ achievementId: userAchievements.achievementId, unlockedAt: userAchievements.unlockedAt })
+        .from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+    for (const row of earnedRows) {
+        earnedMap.set(row.achievementId, row.unlockedAt);
+    }
+
+    const badges = allBadges.map((b) => ({
+        slug: b.slug,
+        title: b.title,
+        description: b.description,
+        icon: b.icon,
+        rarity: b.rarity,
+        earned: earnedMap.has(b.id),
+        unlockedAt: earnedMap.get(b.id) ?? null,
+    }));
+
+    const xpProgress = getXpProgress(userRec.xp ?? 0);
+
+    return {
+        currentLevel: userRec.currentLevel ?? 1,
+        xp: userRec.xp ?? 0,
+        xpProgress,
+        streakDays: userRec.streakDays ?? 0,
+        totalProjects: projectCount?.count ?? 0,
+        totalReviews: reviewCount?.count ?? 0,
+        totalInterviews: interviewCount?.count ?? 0,
+        skillRadar,
+        badges,
+    };
 }

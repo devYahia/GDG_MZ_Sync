@@ -12,6 +12,7 @@ import type { SimulationTask } from "@/lib/tasks"
 import type { SimulationPersona } from "@/lib/api"
 import { useProjectWorkspace } from "@/components/project/ProjectWorkspaceContext"
 import { cn } from "@/lib/utils"
+import { logActivity } from "@/app/(dashboard)/actions"
 
 const WELCOME_EN = "Hi! I'm your client for this project. Ask me anything about the requirements, the challenge, or what I expect. I'll answer as the stakeholder."
 const WELCOME_AR = "مرحباً! أنا عميلك في هذا المشروع. اسألني عن المتطلبات أو المهمة أو توقعاتي. سأجيبك بصفة صاحب المصلحة."
@@ -63,6 +64,8 @@ export function ProjectChat({ task, personaId, persona, simulation, messages: co
     const userMsg: ChatMessage = { role: "user", content: text }
     setInternalMessages((prev) => [...prev, userMsg])
     setLoading(true)
+    // Fire-and-forget activity log
+    logActivity("chat_message_sent", "project", task.id, { personaId }).catch(() => { })
     try {
       const res = await postProjectChat({
         project_id: task.id,

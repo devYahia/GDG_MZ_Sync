@@ -4,17 +4,17 @@ import { motion } from "motion/react"
 import Link from "next/link"
 import {
     Sparkles,
-    Rocket,
-    Target,
-    TrendingUp,
-    FolderKanban,
     ArrowRight,
 } from "lucide-react"
 
-import { FIELD_CONFIG, TASKS, type TaskField } from "@/lib/tasks"
-import { ProjectGallery } from "@/components/dashboard/ProjectGallery"
+import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 import { QuickStartActions } from "@/components/dashboard/QuickStartActions"
+import { ContinueSection } from "@/components/dashboard/ContinueSection"
+import { DiscoverSection } from "@/components/dashboard/DiscoverSection"
+import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline"
+import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot"
 import { cn } from "@/lib/utils"
+import type { DashboardData } from "@/app/(dashboard)/actions"
 
 const levelLabels: Record<string, string> = {
     student: "Student",
@@ -23,40 +23,16 @@ const levelLabels: Record<string, string> = {
 }
 
 interface DashboardClientProps {
-    userName: string
-    fieldKey: string
-    experienceLevel: string
+    data: DashboardData
     showQuickStart?: boolean
 }
 
-export function DashboardClient({ userName, fieldKey, experienceLevel, showQuickStart }: DashboardClientProps) {
-    const fieldConfig = FIELD_CONFIG[(fieldKey as TaskField) ?? "frontend"]
+export function DashboardClient({ data, showQuickStart }: DashboardClientProps) {
+    const { user, xpProgress, inProgressProjects, recentActivity, earnedBadges, skillAverages, discoveredEventTypes } = data
+    const fieldConfig = FIELD_CONFIG[(user.field as TaskField) ?? "frontend"]
     const FieldIcon = fieldConfig?.icon
-    const firstName = userName?.split(" ")[0] ?? "there"
-
-    const stats = [
-        {
-            label: "Available Projects",
-            value: TASKS.length,
-            icon: FolderKanban,
-            gradient: "from-violet-500 to-purple-600",
-            bgGlow: "bg-violet-500/10",
-        },
-        {
-            label: "Difficulty Levels",
-            value: "L1 – L8",
-            icon: Target,
-            gradient: "from-amber-500 to-orange-600",
-            bgGlow: "bg-amber-500/10",
-        },
-        {
-            label: "Tracks",
-            value: Object.keys(FIELD_CONFIG).length,
-            icon: TrendingUp,
-            gradient: "from-emerald-500 to-teal-600",
-            bgGlow: "bg-emerald-500/10",
-        },
-    ]
+    const firstName = user.name?.split(" ")[0] ?? "there"
+    const isReturning = inProgressProjects.length > 0
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30">
@@ -66,15 +42,14 @@ export function DashboardClient({ userName, fieldKey, experienceLevel, showQuick
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[1px] w-[60%] bg-gradient-to-r from-transparent via-purple-500/20 dark:via-purple-500/40 to-transparent" />
             </div>
 
-            <div className="relative z-10 mx-auto max-w-7xl space-y-10 p-6 sm:p-8 lg:p-10">
-                {/* ── Hero Section ── */}
+            <div className="relative z-10 mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+                {/* -- Hero Section -- */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                     className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card/80 to-card/40 p-8 sm:p-10"
                 >
-                    {/* Decorative Glow */}
                     <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-purple-500/10 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl" />
 
@@ -82,7 +57,7 @@ export function DashboardClient({ userName, fieldKey, experienceLevel, showQuick
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-medium uppercase tracking-widest text-primary/80">
-                                    Simulation Hub
+                                    Command Center
                                 </span>
                             </div>
                             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
@@ -95,34 +70,19 @@ export function DashboardClient({ userName, fieldKey, experienceLevel, showQuick
                                 Practice real-world projects with AI-powered client personas.
                                 Pick a simulation and level up your skills.
                             </p>
-
-                            {/* Tags */}
                             <div className="flex flex-wrap items-center gap-2">
                                 {fieldConfig && FieldIcon && (
-                                    <span
-                                        className={cn(
-                                            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium",
-                                            fieldConfig.bg,
-                                            fieldConfig.color,
-                                            "border-current/20"
-                                        )}
-                                    >
+                                    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium", fieldConfig.bg, fieldConfig.color, "border-current/20")}>
                                         <FieldIcon className="h-3 w-3" />
                                         {fieldConfig.label}
                                     </span>
                                 )}
                                 <span className="rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
-                                    {levelLabels[experienceLevel] ?? experienceLevel}
+                                    {levelLabels[user.experienceLevel] ?? user.experienceLevel}
                                 </span>
                             </div>
                         </div>
-
-                        {/* CTA */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3 }}
-                        >
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
                             <Link
                                 href="/simulations/create"
                                 className="group flex items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/20 to-indigo-600/20 px-6 py-4 transition-all duration-300 hover:border-primary/50 hover:from-primary/30 hover:to-indigo-600/30 hover:shadow-lg hover:shadow-primary/10"
@@ -140,49 +100,42 @@ export function DashboardClient({ userName, fieldKey, experienceLevel, showQuick
                     </div>
                 </motion.section>
 
-                {showQuickStart && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <h2 className="text-xl font-bold mb-6">Recommended for You</h2>
-                        <QuickStartActions user={{ field: fieldKey, experienceLevel }} />
-                    </motion.div>
-                )}
+                {/* -- Progress Snapshot -- */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <ProgressSnapshot
+                        currentLevel={user.currentLevel}
+                        nextLevel={xpProgress.nextLevel ?? user.currentLevel + 1}
+                        xp={user.xp}
+                        xpPercent={xpProgress.progressPercent}
+                        streakDays={user.streakDays}
+                        credits={user.credits}
+                        earnedBadges={earnedBadges}
+                        skillAverages={skillAverages}
+                    />
+                </motion.div>
 
-                {/* ── Stats Strip ── */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {stats.map((stat, i) => {
-                        const Icon = stat.icon
-                        return (
-                            <motion.div
-                                key={stat.label}
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.15 + i * 0.06, duration: 0.35 }}
-                                className="group relative overflow-hidden rounded-2xl border border-border bg-card/50 p-5 transition-all duration-300 hover:border-border hover:bg-card/80 hover:-translate-y-0.5"
-                            >
-                                {/* Subtle gradient glow */}
-                                <div className={cn("pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl opacity-30 transition-opacity group-hover:opacity-50", stat.bgGlow)} />
+                {/* -- Quick Start (new users) or Continue (returning users) -- */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    {showQuickStart && !isReturning ? (
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Recommended for You</h2>
+                            <QuickStartActions user={{ field: user.field, experienceLevel: user.experienceLevel }} />
+                        </div>
+                    ) : isReturning ? (
+                        <ContinueSection projects={inProgressProjects} />
+                    ) : null}
+                </motion.div>
 
-                                <div className="relative flex items-start justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-                                        <p className="mt-1.5 text-xl font-bold tracking-tight text-foreground">{stat.value}</p>
-                                    </div>
-                                    <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br", stat.gradient, "opacity-80 transition-transform group-hover:scale-110")}>
-                                        <Icon className="h-4 w-4 text-white" />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )
-                    })}
-                </div>
+                {/* -- Discover Section -- */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <DiscoverSection discoveredEventTypes={discoveredEventTypes} />
+                </motion.div>
 
-                {/* ── Project Gallery ── */}
-                <ProjectGallery />
+                {/* -- Activity Timeline -- */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                    <ActivityTimeline activities={recentActivity} />
+                </motion.div>
             </div>
-        </div >
+        </div>
     )
 }

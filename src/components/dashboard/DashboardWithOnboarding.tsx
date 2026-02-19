@@ -1,23 +1,21 @@
-
 "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardClient } from "./DashboardClient"
 import { LiquidGlassBubble } from "./LiquidGlassBubble"
+import type { DashboardData } from "@/app/(dashboard)/actions"
 
 interface DashboardWithOnboardingProps {
     userName: string
-    fieldKey: string
-    experienceLevel: string
     onboardingCompleted: boolean
+    dashboardData: DashboardData | null
 }
 
 export function DashboardWithOnboarding({
     userName,
-    fieldKey,
-    experienceLevel,
     onboardingCompleted,
+    dashboardData,
 }: DashboardWithOnboardingProps) {
     const router = useRouter()
     const [justFinished, setJustFinished] = useState(false)
@@ -29,13 +27,19 @@ export function DashboardWithOnboarding({
 
     const showOnboarding = !onboardingCompleted && !justFinished
 
+    if (!dashboardData) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <p className="text-muted-foreground">Loading dashboard...</p>
+            </div>
+        )
+    }
+
     return (
         <>
             <DashboardClient
-                userName={userName}
-                fieldKey={fieldKey}
-                experienceLevel={experienceLevel}
-                showQuickStart={justFinished} // Only show if they just finished in this session
+                data={dashboardData}
+                showQuickStart={justFinished}
             />
             <LiquidGlassBubble
                 userName={userName}

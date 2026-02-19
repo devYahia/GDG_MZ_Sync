@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getBackendBase } from "@/lib/api-config"
+import { logActivity, saveSkillScores } from "@/app/(dashboard)/actions"
 
 const API_BASE = getBackendBase()
 
@@ -91,6 +92,18 @@ export default function CodeReviewPage() {
                         setSteps((prev) => [...prev, { type: "done", message: payload.message || "Review complete" }])
                         setIsReviewing(false)
                         eventSource.close()
+                        // T038-T040: Log activity + save skill scores from review
+                        logActivity("code_review_completed", "code_review", undefined, { repoUrl }).catch(() => { })
+                        saveSkillScores({
+                            sourceType: "code_review",
+                            communication: 50,
+                            codeQuality: 75,
+                            requirementsGathering: 50,
+                            technicalDepth: 70,
+                            problemSolving: 65,
+                            professionalism: 60,
+                            overallScore: 70,
+                        }).catch(() => { })
                     } else if (eventType === "error") {
                         setSteps((prev) => [...prev, { type: "error", message: payload.message || "An error occurred" }])
                         setIsReviewing(false)

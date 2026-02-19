@@ -366,9 +366,9 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
 
     return (
         <ProjectWorkspaceProvider initialCode="// Implement your solution here.\n// Push to GitHub from the toolbar when ready.\n">
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0">
                 {/* Left: Sidebar Navigation */}
-                <div className="flex w-[240px] shrink-0 min-w-0 flex-col">
+                <div className="hidden lg:flex w-[240px] shrink-0 min-w-0 flex-col">
                     <ProjectSidebar
                         groups={sidebarGroups}
                         activeId={activeId}
@@ -377,7 +377,7 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                 </div>
 
                 {/* Middle: Content Area — Description or separate chat per persona */}
-                <div className="flex flex-1 min-w-0 flex-col border-r border-white/10 bg-black/40 relative overflow-hidden">
+                <div className="flex flex-1 min-w-0 flex-col border-b lg:border-b-0 lg:border-r border-white/10 bg-black/40 relative overflow-hidden min-h-[50vh] lg:min-h-0">
                     <AnimatePresence mode="wait">
                         {activeId === "report" ? (
                             <motion.div
@@ -569,7 +569,7 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
                 </div>
 
                 {/* Right: VS Code-style sandbox (Monaco editor + AI review + Push to GitHub) */}
-                <div className="flex w-[40%] min-w-0 flex-col">
+                <div className="flex w-full lg:w-[40%] min-w-0 flex-col min-h-[50vh] lg:min-h-0">
                     <ProjectPresence projectId={task.id} />
                     <ProjectIDE task={task} />
                 </div>

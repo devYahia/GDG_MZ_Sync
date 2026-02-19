@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useEffect, useRef } from "react"
 import { motion } from "motion/react"
 import {
     CheckCircle,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import type { ChatAnalysisResponse, SkillMetric } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { logActivity, saveSkillScores } from "@/app/(dashboard)/actions"
 
 interface ProjectReportProps {
     analysis: ChatAnalysisResponse
@@ -32,6 +33,32 @@ export function ProjectReport({ analysis }: ProjectReportProps) {
         [analysis.technical_skills])
 
     const hiringProb = analysis.overall_score
+
+    // --- T031 + T032: save skill scores + log activity on render ---
+    const hasLogged = useRef(false)
+    useEffect(() => {
+        if (hasLogged.current) return
+        hasLogged.current = true
+        // Map analysis skills to our 6-dimension schema
+        const findScore = (name: string) => {
+            const all = [...analysis.soft_skills, ...analysis.technical_skills]
+            const match = all.find((s) => s.name.toLowerCase().includes(name))
+            return match?.score ?? 50
+        }
+        saveSkillScores({
+            sourceType: "chat_analysis",
+            communication: findScore("communication"),
+            codeQuality: findScore("code"),
+            requirementsGathering: findScore("requirement"),
+            technicalDepth: findScore("technical"),
+            problemSolving: findScore("problem"),
+            professionalism: findScore("professional"),
+            overallScore: analysis.overall_score,
+        }).catch(() => { })
+        logActivity("report_generated", "project", undefined, {
+            overallScore: analysis.overall_score,
+        }).catch(() => { })
+    }, [analysis])
 
     return (
         <div className="flex h-full flex-col overflow-y-auto bg-black p-4 md:p-8 space-y-6">

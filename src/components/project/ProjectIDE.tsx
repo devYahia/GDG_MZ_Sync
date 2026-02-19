@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { Play, Loader2, CheckCircle, XCircle, Terminal, FileCode, ChevronUp, ChevronDown, ExternalLink } from "lucide-react"
+import { Play, Loader2, CheckCircle, XCircle, Terminal, FileCode, ChevronUp, ChevronDown, ExternalLink, Save } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -51,6 +52,39 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
   const [outputOpen, setOutputOpen] = useState(true)
   const outputRef = useRef<HTMLPreElement>(null)
   const { resolvedTheme } = useTheme()
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle")
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // --- Auto-save: debounced 2s write to localStorage ---
+  useEffect(() => {
+    if (!activeFileId || !code) return
+    setSaveStatus("saving")
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`project-${task.id}-file-${activeFileId}`, code)
+        setSaveStatus("saved")
+      } catch { /* quota exceeded */ }
+    }, 2000)
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [code, activeFileId, task.id])
+
+  // --- 30-second periodic sync toast ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (saveStatus === "saved") {
+        toast.success("Auto-saved", { duration: 1500, id: "autosave" })
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [saveStatus])
+
+  // --- Restore from localStorage on mount ---
+  useEffect(() => {
+    if (!activeFileId) return
+    const saved = localStorage.getItem(`project-${task.id}-file-${activeFileId}`)
+    if (saved && !code) setCode(saved)
+  }, [activeFileId, task.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = useCallback(async () => {
     setReviewLoading(true)

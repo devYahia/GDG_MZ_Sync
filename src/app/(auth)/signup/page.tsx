@@ -18,8 +18,8 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
+
+
 
 import { signupAction } from "@/app/actions/auth-actions"
 
@@ -69,7 +69,6 @@ export default function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [region, setRegion] = useState("")
 
-
     function handleSignup() {
         if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !region.trim()) {
             toast.error("Please fill in all fields")
@@ -87,8 +86,7 @@ export default function SignupPage() {
                 password,
                 name: fullName,
                 region,
-
-                field: "frontend",
+                field: "frontend", // Default, will be updated in Onboarding Modal
                 experienceLevel: "student", // Default
                 credits: 10,
                 onboardingCompleted: false,
@@ -237,8 +235,8 @@ export default function SignupPage() {
                                     className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500/50 focus:ring-purple-500/20"
                                 />
                             </div>
-
                         </div>
+
                         <Button
                             className="w-full h-12 bg-gradient-to-r from-[#4e1e40] to-black border border-white/10 hover:shadow-[0_0_20px_-5px_rgba(78,30,64,0.5)] transition-all duration-300 rounded-lg font-medium text-white"
                             disabled={isPending}

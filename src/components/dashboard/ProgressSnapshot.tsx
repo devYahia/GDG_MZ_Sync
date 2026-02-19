@@ -1,9 +1,22 @@
 "use client"
 
-import { Flame, TrendingUp, Star, Trophy } from "lucide-react"
+import { Flame, TrendingUp, Star, Trophy, Target, Zap, Crown, Swords, GitPullRequest, CheckCircle2, Mic } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
+
+const ICON_MAP: Record<string, any> = {
+    trophy: Trophy,
+    swords: Swords,
+    "git-pull-request": GitPullRequest,
+    "check-circle-2": CheckCircle2,
+    mic: Mic,
+    star: Star,
+    flame: Flame,
+    zap: Zap,
+    crown: Crown,
+    target: Target,
+}
 
 // Lazy-load recharts to avoid SSR issues
 const RadarChart = dynamic(() => import("recharts").then((m) => m.RadarChart), { ssr: false })
@@ -144,18 +157,22 @@ export function ProgressSnapshot({
                     <p className="text-xs text-muted-foreground">Complete activities to earn badges.</p>
                 ) : (
                     <div className="flex flex-wrap gap-1.5">
-                        {earnedBadges.slice(0, 8).map((badge) => (
-                            <span
-                                key={badge.slug}
-                                title={badge.title}
-                                className={cn(
-                                    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                                    RARITY_COLORS[badge.rarity] ?? RARITY_COLORS.common
-                                )}
-                            >
-                                {badge.title}
-                            </span>
-                        ))}
+                        {earnedBadges.slice(0, 8).map((badge) => {
+                            const Icon = ICON_MAP[badge.icon] || Trophy
+                            return (
+                                <span
+                                    key={badge.slug}
+                                    title={badge.title}
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-white/10",
+                                        RARITY_COLORS[badge.rarity] ?? RARITY_COLORS.common
+                                    )}
+                                >
+                                    <Icon className="h-3 w-3" />
+                                    {badge.title}
+                                </span>
+                            )
+                        })}
                         {earnedBadges.length > 8 && (
                             <span className="text-xs text-muted-foreground self-center">+{earnedBadges.length - 8} more</span>
                         )}

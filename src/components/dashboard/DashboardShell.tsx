@@ -20,12 +20,8 @@ function DashboardShellInner({
 }) {
   const pathname = usePathname()
   const { width } = useSidebar()
-  const isProjectPage = /^\/dashboard\/project(\/|$)/.test(pathname ?? "")
-  const isIDEPage = pathname === "/ide"
-
-  if (isProjectPage || isIDEPage) {
-    return <>{children}</>
-  }
+  // Ensure we always show the sidebar/layout unless explicitly detached
+  // Removing the bypass to ensure navigation is always accessible
 
   return (
     <>

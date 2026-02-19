@@ -6,8 +6,21 @@ import { motion } from "motion/react"
 import {
     Lock, Star, Zap, Target, Trophy, TrendingUp, BarChart3,
     Users, ShieldAlert, Cpu, Database, Flame, GraduationCap,
-    Briefcase, Code, MessageSquare, Brain
+    Briefcase, Code, MessageSquare, Brain, Swords, GitPullRequest, CheckCircle2, Mic
 } from "lucide-react"
+
+const ICON_MAP: Record<string, any> = {
+    trophy: Trophy,
+    swords: Swords,
+    "git-pull-request": GitPullRequest,
+    "check-circle-2": CheckCircle2,
+    mic: Mic,
+    star: Star,
+    flame: Flame,
+    zap: Zap,
+    crown: Trophy, // Fallback if crown missing
+    target: Target,
+}
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { ProgressPageData } from "@/app/(dashboard)/actions"
@@ -168,20 +181,24 @@ export function ProgressClient({ data }: { data: ProgressPageData }) {
                         Badges ({badges.filter((b) => b.earned).length}/{badges.length})
                     </h2>
                     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                        {badges.map((badge) => (
-                            <div
-                                key={badge.slug}
-                                className={cn(
-                                    "flex flex-col items-center rounded-xl border p-3 text-center transition-all",
-                                    badge.earned
-                                        ? RARITY_COLORS[badge.rarity] ?? "border-white/10 bg-white/5"
-                                        : "border-white/5 bg-white/[0.01] opacity-40 grayscale"
-                                )}
-                            >
-                                <span className="text-2xl mb-1">{badge.icon}</span>
-                                <span className="text-[10px] font-medium leading-tight line-clamp-2">{badge.title}</span>
-                            </div>
-                        ))}
+                        {badges.map((badge) => {
+                            const Icon = ICON_MAP[badge.icon] || Trophy
+                            return (
+                                <div
+                                    key={badge.slug}
+                                    title={badge.description}
+                                    className={cn(
+                                        "flex flex-col items-center rounded-xl border p-3 text-center transition-all hover:scale-105",
+                                        badge.earned
+                                            ? RARITY_COLORS[badge.rarity] ?? "border-white/10 bg-white/5"
+                                            : "border-white/5 bg-white/[0.01] opacity-40 grayscale"
+                                    )}
+                                >
+                                    <Icon className={cn("h-6 w-6 mb-1.5", badge.earned ? "text-primary" : "text-muted-foreground")} />
+                                    <span className="text-[10px] font-medium leading-tight line-clamp-2">{badge.title}</span>
+                                </div>
+                            )
+                        })}
                         {badges.length === 0 && (
                             <p className="col-span-full text-sm text-muted-foreground text-center py-8">
                                 No badges available yet.

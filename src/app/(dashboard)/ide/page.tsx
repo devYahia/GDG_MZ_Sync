@@ -38,13 +38,13 @@ interface StepEvent {
 }
 
 const STEP_CONFIG = {
-    step: { icon: Zap, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/30" },
-    file: { icon: FileCode, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/30" },
-    execute: { icon: TerminalIcon, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/30" },
-    lint: { icon: Search, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30" },
+    step: { icon: Zap, color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/30" },
+    file: { icon: FileCode, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/30" },
+    execute: { icon: TerminalIcon, color: "text-primary", bg: "bg-primary/10", border: "border-primary/30" },
+    lint: { icon: Search, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
     error: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30" },
     done: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
-    report: { icon: FileText, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/30" },
+    report: { icon: FileText, color: "text-primary", bg: "bg-primary/10", border: "border-primary/30" },
 }
 
 export default function IDEPage() {
@@ -244,17 +244,17 @@ export default function IDEPage() {
     const fileList = Object.keys(files).sort()
 
     return (
-        <div className="h-screen flex flex-col bg-background text-foreground">
+        <div className="h-[calc(100vh-64px)] flex flex-col bg-background text-foreground">
             {/* Top Bar */}
-            <div className="h-14 flex items-center justify-between px-4 bg-black/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0">
+            <div className="h-14 flex items-center justify-between px-4 bg-card/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30">
-                        <Code2 className="h-5 w-5 text-blue-400" />
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/30">
+                        <Code2 className="h-5 w-5 text-primary" />
                     </div>
-                    <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        Professional IDE
+                    <h1 className="text-lg font-bold bg-gradient-to-r from-primary via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                        IDE Environment
                     </h1>
-                    <span className="text-xs text-gray-500">with AI Code Review</span>
+                    <span className="text-xs text-muted-foreground">with AI Agent Sync</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -262,9 +262,9 @@ export default function IDEPage() {
                         onClick={runCode}
                         disabled={isRunning}
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 h-8"
+                        className="bg-primary hover:bg-primary/90 h-8 text-black font-semibold"
                     >
-                        {isRunning ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                        {isRunning ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1 fill-current" />}
                         Run Code
                     </Button>
                     <Button onClick={() => setShowFileExplorer(!showFileExplorer)} variant="ghost" size="sm" className="h-8">
@@ -291,7 +291,7 @@ export default function IDEPage() {
                             {fileList.map(path => (
                                 <div
                                     key={path}
-                                    className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition ${activeFile === path ? "bg-blue-500/20 text-blue-400" : "hover:bg-white/5 text-gray-300"
+                                    className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition ${activeFile === path ? "bg-primary/20 text-primary" : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
                                         }`}
                                     onClick={() => {
                                         setActiveFile(path)
@@ -396,20 +396,19 @@ export default function IDEPage() {
                     </div>
                 )}
 
-                {/* Terminal */}
                 {showTerminal && (
-                    <div className="bg-black/50 border-t border-white/10 flex flex-col overflow-hidden" style={{ gridColumn: showFileExplorer && showReviewPanel ? "1 / 3" : (showFileExplorer || showReviewPanel ? "1 / 2" : "1") }}>
+                    <div className="bg-black/50 border-t border-white/10 flex flex-col overflow-hidden" style={{ gridColumn: showFileExplorer && showReviewPanel ? "1 / 4" : (showFileExplorer || showReviewPanel ? "1 / 3" : "1") }}>
                         <div className="px-4 py-2 bg-black/40 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                             <div className="flex items-center gap-2">
-                                <TerminalIcon className="h-4 w-4 text-emerald-400" />
-                                <span className="text-xs font-semibold text-gray-400 uppercase">Output</span>
+                                <TerminalIcon className="h-4 w-4 text-primary" />
+                                <span className="text-xs font-semibold text-muted-foreground uppercase">Console Output</span>
                             </div>
-                            <button onClick={() => setShowTerminal(false)} className="p-1 hover:bg-white/10 rounded">
-                                <Minimize2 className="h-3 w-3 text-gray-400" />
+                            <button onClick={() => setShowTerminal(false)} className="p-1 hover:bg-white/10 rounded text-muted-foreground">
+                                <Minimize2 className="h-3 w-3" />
                             </button>
                         </div>
-                        <pre className="flex-1 p-4 overflow-auto text-xs font-mono text-emerald-400 whitespace-pre-wrap">
-                            {output || "Run your code to see output here..."}
+                        <pre className="flex-1 p-4 overflow-auto text-xs font-mono text-primary whitespace-pre-wrap selection:bg-primary/20">
+                            {output || "Execution output will appear here..."}
                         </pre>
                     </div>
                 )}
@@ -419,9 +418,9 @@ export default function IDEPage() {
                 !showTerminal && (
                     <button
                         onClick={() => setShowTerminal(true)}
-                        className="fixed bottom-4 right-4 p-2 bg-emerald-600 rounded-lg shadow-lg hover:bg-emerald-700 transition"
+                        className="fixed bottom-4 right-4 p-2 bg-primary rounded-lg shadow-lg hover:bg-primary/90 transition text-black"
                     >
-                        <Maximize2 className="h-4 w-4 text-white" />
+                        <Maximize2 className="h-4 w-4" />
                     </button>
                 )
             }

@@ -115,14 +115,7 @@ export function DashboardClient({ data, showQuickStart }: DashboardClientProps) 
 
                 {/* -- Quick Start (new users) or Continue (returning users) -- */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    {showQuickStart && !isReturning ? (
-                        <div>
-                            <h2 className="text-lg font-semibold mb-4">Recommended for You</h2>
-                            <QuickStartActions user={{ field: user.field, experienceLevel: user.experienceLevel }} />
-                        </div>
-                    ) : isReturning ? (
-                        <ContinueSection projects={inProgressProjects} />
-                    ) : null}
+                    {isReturning && <ContinueSection projects={inProgressProjects} />}
                 </motion.div>
 
                 {/* -- Simulation Templates -- */}

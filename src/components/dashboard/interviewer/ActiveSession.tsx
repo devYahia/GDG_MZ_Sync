@@ -134,12 +134,7 @@ export function ActiveSession({
                 for (let i = 0; i < bufferLength; i++) {
                     barHeight = (dataArray[i] / 255) * canvas.height
 
-                    // Dynamic color based on volume
-                    const r = barHeight + (25 * (i / bufferLength))
-                    const g = 250 * (i / bufferLength)
-                    const b = 50
-
-                    ctx.fillStyle = `rgb(${r},${g},${b})`
+                    ctx.fillStyle = "rgba(168, 85, 247, 0.8)" // Glowy Purple
                     ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
 
                     x += barWidth + 1

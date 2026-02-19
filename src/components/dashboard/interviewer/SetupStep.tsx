@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "motion/react"
-import { ArrowRight, Briefcase, Sparkles } from "lucide-react"
+import { ArrowRight, Briefcase, Sparkles, Cpu, Layers, Layout, Server, MessageSquare, Database, Rocket, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -18,14 +18,14 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 const FOCUS_AREAS = [
-    { id: "algorithms", label: "Algorithms" },
-    { id: "system-design", label: "System Design" },
-    { id: "frontend", label: "Frontend" },
-    { id: "backend", label: "Backend" },
-    { id: "behavioral", label: "Behavioral" },
-    { id: "databases", label: "Databases" },
-    { id: "devops", label: "DevOps" },
-    { id: "security", label: "Security" },
+    { id: "algorithms", label: "Algorithms", icon: Cpu },
+    { id: "system-design", label: "System Design", icon: Layers },
+    { id: "frontend", label: "Frontend", icon: Layout },
+    { id: "backend", label: "Backend", icon: Server },
+    { id: "behavioral", label: "Behavioral", icon: MessageSquare },
+    { id: "databases", label: "Databases", icon: Database },
+    { id: "devops", label: "DevOps", icon: Rocket },
+    { id: "security", label: "Security", icon: Shield },
 ]
 
 const DIFFICULTY_LABELS = ["Easy", "Medium", "Hard", "Expert"]
@@ -151,22 +151,26 @@ export function SetupStep({
 
                     {/* Focus Area Chips */}
                     <div className="space-y-3">
-                        <Label className="text-base font-medium text-white/80">Focus Areas</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {FOCUS_AREAS.map((area) => (
-                                <button
-                                    key={area.id}
-                                    onClick={() => toggleFocus(area.id)}
-                                    className={cn(
-                                        "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-200",
-                                        selectedFocus.includes(area.id)
-                                            ? "border-violet-500 bg-violet-500/20 text-violet-300 shadow-[0_0_10px_-4px_rgba(139,92,246,0.5)]"
-                                            : "border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/70"
-                                    )}
-                                >
-                                    {area.label}
-                                </button>
-                            ))}
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {FOCUS_AREAS.map((area) => {
+                                const Icon = area.icon
+                                const isSelected = selectedFocus.includes(area.id)
+                                return (
+                                    <button
+                                        key={area.id}
+                                        onClick={() => toggleFocus(area.id)}
+                                        className={cn(
+                                            "flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-sm font-medium transition-all duration-300",
+                                            isSelected
+                                                ? "border-primary bg-primary/10 text-primary shadow-[0_0_20px_-5px_rgba(168,85,247,0.3)]"
+                                                : "border-white/5 bg-white/5 text-white/50 hover:border-white/20 hover:text-white/80"
+                                        )}
+                                    >
+                                        <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-white/30")} />
+                                        {area.label}
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
 

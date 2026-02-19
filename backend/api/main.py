@@ -84,11 +84,17 @@ async def generate_simulation(request: GenerateSimulationRequest):
     
     # 2. Save to Postgres via asyncpg
     try:
-        user_id = request.user_id
+        # Cast string user_id to UUID object for asyncpg
+        try:
+            user_uuid = uuid.UUID(request.user_id)
+        except ValueError:
+            print(f"[BACKEND ERROR] Invalid UUID format for user_id: {request.user_id}")
+            raise HTTPException(status_code=400, detail="Invalid User ID format")
+
         # Check if user exists to avoid FK error
-        user_check = await db.fetchrow("SELECT id FROM \"user\" WHERE id = $1", user_id)
+        user_check = await db.fetchrow("SELECT id FROM \"user\" WHERE id = $1", user_uuid)
         if not user_check:
-            print(f"[BACKEND ERROR] User {user_id} not found in 'user' table. Please re-login on the frontend.")
+            print(f"[BACKEND ERROR] User {user_uuid} not found in 'user' table. Please re-login on the frontend.")
         
         # Mapping SimulationOutput to DB columns
         sim_id_row = await db.fetchrow(
@@ -98,10 +104,10 @@ async def generate_simulation(request: GenerateSimulationRequest):
                 estimated_duration, tech_stack, overview, 
                 learning_objectives, functional_requirements, 
                 non_functional_requirements, milestones, resources, quiz
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15::jsonb)
             RETURNING id
             """,
-            user_id,
+            user_uuid,
             simulation_data.title,
             request.context,
             simulation_data.domain,
@@ -129,7 +135,7 @@ async def generate_simulation(request: GenerateSimulationRequest):
                     system_prompt, initial_message
                 ) VALUES ($1, $2, $3, $4, $5, $6)
                 """,
-                sim_id,
+                sim_id_row['id'], # Pass UUID object directly
                 persona.name,
                 persona.role,
                 persona.personality,

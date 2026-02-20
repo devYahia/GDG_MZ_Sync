@@ -21,7 +21,7 @@ const museoModerno = MuseoModerno({
   variable: "--font-logo",
 })
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://interna.dev"
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://interna.work"
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),

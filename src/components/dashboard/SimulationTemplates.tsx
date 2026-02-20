@@ -101,7 +101,7 @@ export function SimulationTemplates({ userField }: SimulationTemplatesProps) {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ duration: 0.2, delay: i * 0.05 }}
                             >
-                                <Link href={`/simulations/create?template=${task.id}`}>
+                                <Link href={`/project/${task.id}`}>
                                     <div className="group relative h-full overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] transition-all duration-300 hover:border-primary/20 hover:bg-white/[0.04] hover:shadow-2xl hover:shadow-primary/5">
                                         {/* Hover Gradient Bloom */}
                                         <div className="absolute -inset-px opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />

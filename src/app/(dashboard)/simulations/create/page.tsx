@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Sparkles, ArrowLeft, Loader2, Zap, CheckCircle, AlertCircle, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { useToast } from "@/hooks/use-toast"
 import { SimulationView } from "@/components/simulation-view"
 import { checkAndDeductCredits } from "@/app/actions/credits"
+import { TASKS } from "@/lib/tasks"
+import { Suspense, useEffect } from "react"
 
 const LEVEL_LABELS: Record<string, string> = {
     L0: "Absolute Beginner",
@@ -61,12 +63,36 @@ function getLevelBarColor(n: number): string {
 }
 
 export default function CreateSimulationPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <CreateSimulationContent />
+        </Suspense>
+    )
+}
+
+function CreateSimulationContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { toast } = useToast()
+
+    const templateId = searchParams.get("template")
 
     const [title, setTitle] = useState("")
     const [context, setContext] = useState("")
     const [levelNum, setLevelNum] = useState(5)
+
+    // Check if we have a template and pre-fill
+    useEffect(() => {
+        if (templateId) {
+            const task = TASKS.find(t => t.id === templateId)
+            if (task) {
+                setTitle(task.title)
+                setContext(`Field: ${task.field}\n\nDescription: ${task.description}\n\nClient Persona: ${task.clientPersona} - ${task.clientMood}\n\nTools Required: ${task.tools.join(", ")}`)
+                setLevelNum(task.level)
+            }
+        }
+    }, [templateId])
+
     const [isLoading, setIsLoading] = useState(false)
     /** After successful generation, show preview with this data (so user sees result instead of going back to form) */
     const [generatedResult, setGeneratedResult] = useState<{ simulation_id: string; simulation_data: any } | null>(null)

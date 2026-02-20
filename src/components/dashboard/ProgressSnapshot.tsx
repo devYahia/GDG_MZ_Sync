@@ -94,7 +94,7 @@ export function ProgressSnapshot({
                 <div className="space-y-1.5">
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Level {currentLevel}</span>
-                        <span>Level {nextLevel} — {xpPercent}%</span>
+                        <span>Level {nextLevel} — {Math.round(xpPercent)}%</span>
                     </div>
                     <div className="relative">
                         <Progress value={xpPercent} className="h-2" />

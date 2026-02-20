@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, Loader2, Send, Clock, Mic, MicOff, MessageSquare, Phone, Volume2, StopCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { FeedbackDashboard } from "@/components/interview/FeedbackDashboard"
+import { Suspense } from "react"
 
 type Message = {
     id: string
@@ -22,7 +23,19 @@ declare global {
     }
 }
 
-export default function InterviewSessionClient() {
+export default function InterviewPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <InterviewSessionClient />
+        </Suspense>
+    )
+}
+
+function InterviewSessionClient() {
     const router = useRouter()
 
     // Core State
@@ -35,6 +48,10 @@ export default function InterviewSessionClient() {
     const [finalReport, setFinalReport] = useState("")
     const [timeElapsed, setTimeElapsed] = useState(0)
     const [sessionId, setSessionId] = useState<string>("")
+    const searchParams = useSearchParams()
+
+    const role = searchParams.get("role") || "Software Engineer"
+    const difficulty = searchParams.get("difficulty") || "mid"
 
     // Voice State
     const [isListening, setIsListening] = useState(false)
@@ -104,7 +121,7 @@ export default function InterviewSessionClient() {
         fetch("/api/interview/init", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role: "Senior Software Engineer", difficulty: "senior" })
+            body: JSON.stringify({ role: role, difficulty: difficulty })
         })
             .then(res => res.json())
             .then(data => {
@@ -197,7 +214,7 @@ export default function InterviewSessionClient() {
                 body: JSON.stringify({
                     sessionId: sessionId || "temp-uuid",
                     messages: apiMessages,
-                    jobDescription: "Senior Software Engineer",
+                    jobDescription: role,
                     language: "en"
                 })
             })
@@ -287,7 +304,7 @@ export default function InterviewSessionClient() {
                 sessionId,
                 trigger: "user_completed",
                 messages: apiMessages,
-                jobDescription: "Senior Software Engineer",
+                jobDescription: role,
                 language: "en"
             })
         })
@@ -328,7 +345,7 @@ export default function InterviewSessionClient() {
                     <div className="h-6 w-px bg-border text-xs" />
                     <div className="flex flex-col">
                         <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                            Senior Engineering Assessment
+                            {role} Assessment
                         </h1>
                         <div className="flex items-center gap-2 text-primary font-medium text-xs">
                             <span className="relative flex h-2 w-2">
@@ -523,10 +540,10 @@ export default function InterviewSessionClient() {
                                                 </span>
                                             </div>
                                             <div className={`rounded-2xl px-6 py-4 text-[15px] leading-relaxed shadow-sm ${msg.role === "user"
-                                                    ? "bg-primary text-primary-foreground rounded-tr-sm"
-                                                    : msg.role === "system"
-                                                        ? "bg-muted text-muted-foreground border border-border font-mono text-sm w-full"
-                                                        : "bg-muted/50 text-foreground border border-border/50 rounded-tl-sm"
+                                                ? "bg-primary text-primary-foreground rounded-tr-sm"
+                                                : msg.role === "system"
+                                                    ? "bg-muted text-muted-foreground border border-border font-mono text-sm w-full"
+                                                    : "bg-muted/50 text-foreground border border-border/50 rounded-tl-sm"
                                                 }`}>
                                                 <p className="whitespace-pre-wrap">{msg.content}</p>
                                             </div>

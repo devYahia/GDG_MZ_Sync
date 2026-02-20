@@ -21,7 +21,7 @@ const museoModerno = MuseoModerno({
   variable: "--font-logo",
 })
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://interna.work"
+const appUrl = process.env.SERVICE_URL_FRONTEND || process.env.AUTH_URL || "http://localhost:3000"
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),

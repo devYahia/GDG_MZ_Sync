@@ -21,17 +21,47 @@ const museoModerno = MuseoModerno({
   variable: "--font-logo",
 })
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://interna.dev"
+
 export const metadata: Metadata = {
-  title: "Interna. | Building Senior Developers",
+  metadataBase: new URL(appUrl),
+  title: "Interna. | Virtual Internship for Software Engineers",
   description:
-    "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system. Stop calculating. Start solving.",
+    "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system. Experience real software engineering tasks, prep for technical interviews, and build your portfolio.",
   keywords: [
+    "virtual internship for software engineers",
+    "software engineering internship",
     "internship simulator",
-    "AI training",
-    "developer skills",
-    "virtual internship",
-    "software engineering",
+    "AI code review",
+    "technical interview prep",
+    "Forage alternative",
+    "developer portfolio builder"
   ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: appUrl,
+    title: "Interna. | Virtual Internship for Software Engineers",
+    description: "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system.",
+    siteName: "Interna",
+    images: [
+      {
+        url: `${appUrl}/og-image.png`, // Placeholder for future OG Image
+        width: 1200,
+        height: 630,
+        alt: "Interna - Building Senior Developers",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Interna. | Virtual Internship for Software Engineers",
+    description: "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system.",
+    images: [`${appUrl}/og-image.png`],
+  },
 }
 
 export default async function RootLayout({

@@ -86,8 +86,26 @@ export default function LandingPage() {
     }
   }, [])
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Interna Virtual',
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Any',
+    description: 'An AI-driven virtual internship simulator for software engineers.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  }
+
   return (
     <div className="min-h-screen bg-black text-white relative selection:bg-purple-500/30 overflow-x-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Navbar */}
       <motion.nav

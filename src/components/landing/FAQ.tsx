@@ -68,7 +68,7 @@ const faqItems: FAQItem[] = [
         icon: Shield,
         question: "Is my code and data safe on the platform?",
         answer:
-            "Yes. All code runs in isolated sandboxes and is never shared. Your personal data is encrypted at rest and in transit. We use Supabase with Row Level Security, so your data is strictly yours. We do not sell or share user data with third parties.",
+            "Yes. All code runs in isolated sandboxes and is never shared. Your personal data is encrypted at rest and in transit. We use self-hosted PostgreSQL with Row Level Security, so your data is strictly yours. We do not sell or share user data with third parties.",
     },
     {
         id: "item-7",

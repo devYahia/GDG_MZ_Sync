@@ -214,7 +214,7 @@ export const TASKS: SimulationTask[] = [
         customerDifficulty: "medium",
         level: 4,
         duration: "45 min",
-        tools: ["Next.js", "Supabase", "OAuth"],
+        tools: ["Next.js", "PostgreSQL", "OAuth"],
     },
     {
         id: "data-pipeline",

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-    const appUrl = process.env.SERVICE_URL_FRONTEND || process.env.AUTH_URL || 'http://localhost:3000'
+    const appUrl = process.env.AUTH_URL || 'https://interna.work'
 
     return {
         rules: {

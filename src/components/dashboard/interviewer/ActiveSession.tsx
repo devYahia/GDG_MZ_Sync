@@ -25,10 +25,6 @@ interface ActiveSessionProps {
     setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
     jobDescription: string
     language: "en" | "ar"
-    isAISpeaking: boolean
-    setIsAISpeaking: (v: boolean) => void
-    isAIProcessing: boolean
-    setIsAIProcessing: (v: boolean) => void
     onEnd: () => void
 }
 
@@ -38,31 +34,40 @@ export function ActiveSession({
     setMessages,
     jobDescription,
     language,
-    isAISpeaking,
-    setIsAISpeaking,
-    isAIProcessing,
-    setIsAIProcessing,
     onEnd
 }: ActiveSessionProps) {
     // --- Refs ---
     const videoRef = useRef<HTMLVideoElement>(null)
-    const recognitionRef = useRef<any>(null)
-    const synthRef = useRef<SpeechSynthesis | null>(null)
-    const lastAIResponseRef = useRef<string>("")
     const scrollAreaRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
+    // --- Gemini Live API Hook ---
+    const {
+        messages: internalHookMessages,
+        connected,
+        isAISpeaking: liveIsSpeaking,
+        isListening,
+        startConnection,
+        disconnect,
+        toggleListening,
+        sendManualText
+    } = useGeminiLive(language)
+
     // --- State ---
-    const [transcript, setTranscript] = useState("")
-    const [interimTranscript, setInterimTranscript] = useState("")
-    const [isListening, setIsListening] = useState(false)
-    const [shouldBeListening, setShouldBeListening] = useState(false)
     const [volume, setVolume] = useState(0) // 0-100
-    const [audioAllowed, setAudioAllowed] = useState(false)
     const [sessionDuration, setSessionDuration] = useState(0)
-    const [isMuted, setIsMuted] = useState(false)
     const [aiVolume, setAiVolume] = useState(1) // 0-1
     const [manualInput, setManualInput] = useState("")
+    const [connectionStarted, setConnectionStarted] = useState(false)
+
+    // Sync hook messages with parent state so feedback works at the end
+    // Use stringified messages to avoid infinite loops since array reference changes
+    useEffect(() => {
+        setMessages(internalHookMessages);
+    }, [JSON.stringify(internalHookMessages), setMessages]);
+
+    // Determine if AI is truly speaking based on WS state OR external prop
+    const currentlyAISpeaking = isAISpeaking || liveIsSpeaking;
 
     // --- Timer ---
     useEffect(() => {
@@ -77,6 +82,18 @@ export function ActiveSession({
         const secs = seconds % 60
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
+
+    // --- Initial Connection Setup ---
+    useEffect(() => {
+        if (!connectionStarted && !connected && stream) {
+            setConnectionStarted(true)
+            startConnection(jobDescription).catch(e => console.error(e))
+        }
+
+        return () => {
+            disconnect()
+        }
+    }, [connectionStarted, connected, startConnection, jobDescription, disconnect, stream])
 
     // --- Video Stream Setup ---
     useEffect(() => {
@@ -120,7 +137,7 @@ export function ActiveSession({
             let x = 0
 
             // If AI is speaking, simulate waveform (since we can't easily capture synth output)
-            if (isAISpeaking) {
+            if (currentlyAISpeaking) {
                 // Randomize slightly based on time
                 const time = Date.now() / 100
                 for (let i = 0; i < bufferLength; i++) {
@@ -148,152 +165,14 @@ export function ActiveSession({
             cancelAnimationFrame(animationId)
             audioContext.close()
         }
-    }, [stream, isAISpeaking, aiVolume])
+    }, [stream, currentlyAISpeaking, aiVolume])
 
-    // --- Speech Recognition ---
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            // @ts-ignore
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-            if (SpeechRecognition) {
-                const recognition = new SpeechRecognition()
-                recognition.continuous = true
-                recognition.interimResults = true
-                recognition.lang = language === "ar" ? "ar-EG" : "en-US"
+    // --- Send Manual Message ---
+    const handleSendMessage = () => {
+        if (!manualInput.trim() || !connected) return
 
-                recognition.onstart = () => {
-                    setIsListening(true)
-                    // Auto-stop AI speech if user interrupts
-                    if (window.speechSynthesis) {
-                        window.speechSynthesis.cancel()
-                        setIsAISpeaking(false)
-                    }
-                }
-
-                recognition.onend = () => setIsListening(false)
-
-                recognition.onresult = (event: any) => {
-                    // Interrupt AI if speaking
-                    if (window.speechSynthesis?.speaking) {
-                        window.speechSynthesis.cancel()
-                        setIsAISpeaking(false)
-                    }
-
-                    let interim = ""
-                    let final = ""
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            final += event.results[i][0].transcript
-                        } else {
-                            interim += event.results[i][0].transcript
-                        }
-                    }
-                    setInterimTranscript(interim)
-                    if (final) {
-                        setTranscript(prev => `${prev} ${final}`)
-                    }
-                }
-                recognitionRef.current = recognition
-            }
-            synthRef.current = window.speechSynthesis
-        }
-    }, [language])
-
-    // --- Auto-Restart Logic ---
-    useEffect(() => {
-        if (!recognitionRef.current) return
-        if (shouldBeListening && !isListening) {
-            try { recognitionRef.current.start() } catch (e) { }
-        } else if (!shouldBeListening && isListening) {
-            recognitionRef.current.stop()
-        }
-    }, [shouldBeListening, isListening])
-
-
-    // --- Speak Function ---
-    const speak = (text: string) => {
-        if (!synthRef.current || isMuted) return
-
-        synthRef.current.cancel()
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = language === "ar" ? "ar-EG" : "en-US"
-        utterance.rate = 0.95 // Natural pace
-        utterance.pitch = 1
-        utterance.volume = aiVolume
-
-        // Voice Selection Strategy
-        const voices = synthRef.current.getVoices()
-        const preferredVoice = voices.find(v => v.name.includes("Google") && v.lang.includes(language === "ar" ? "ar" : "en"))
-            || voices.find(v => v.lang.includes(language === "ar" ? "ar" : "en"))
-
-        if (preferredVoice) utterance.voice = preferredVoice
-
-        utterance.onstart = () => setIsAISpeaking(true)
-        utterance.onend = () => setIsAISpeaking(false)
-
-        synthRef.current.speak(utterance)
-    }
-
-    // --- Toggle Listening/Mute ---
-    const toggleMic = () => {
-        if (shouldBeListening) {
-            setShouldBeListening(false)
-            setAudioAllowed(false)
-        } else {
-            setShouldBeListening(true)
-            setAudioAllowed(true)
-            // Initial greeting if empty
-            if (messages.length === 0) handleSendMessage("", true)
-        }
-    }
-
-    // --- Send Message ---
-    const handleSendMessage = async (textOverride?: string, isInitial = false) => {
-        const textToSend = textOverride !== undefined ? textOverride : (manualInput || transcript)
-
-        if (!textToSend.trim() && !isInitial) return
-
-        setIsAIProcessing(true)
-        setTranscript("")
-        setInterimTranscript("")
+        sendManualText(manualInput)
         setManualInput("")
-
-        // Pause listening
-        setShouldBeListening(false)
-
-        const newHistory = isInitial ? [] : [...messages, { role: "user" as const, content: textToSend }]
-        if (!isInitial) setMessages(newHistory)
-
-        try {
-            const imageBase64 = captureFrame()
-            const backendBase = getBackendBase()
-            const res = await fetch(`${backendBase}/api/interview/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    messages: newHistory,
-                    job_description: jobDescription,
-                    language,
-                    image_base64: imageBase64
-                })
-            })
-
-            if (!res.ok) throw new Error("Failed to fetch response")
-
-            const data = await res.json()
-            const aiReply = data.reply
-
-            setMessages(prev => [...prev, { role: "assistant", content: aiReply }])
-            lastAIResponseRef.current = aiReply
-            speak(aiReply)
-
-        } catch (err) {
-            toast.error("Connection failed")
-        } finally {
-            setIsAIProcessing(false)
-            // Resume listening if we were allowed before, unless user manually stopped
-            if (audioAllowed) setShouldBeListening(true)
-        }
     }
 
     const captureFrame = () => {
@@ -355,12 +234,12 @@ export function ActiveSession({
 
                     {/* Status Text */}
                     <div className="mt-8 text-center h-8">
-                        {isAISpeaking ? (
+                        {!connected ? (
+                            <p className="text-muted-foreground animate-pulse">Connecting to live agent...</p>
+                        ) : currentlyAISpeaking ? (
                             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-primary font-medium animate-pulse">
                                 AI Interviewer is speaking...
                             </motion.p>
-                        ) : isAIProcessing ? (
-                            <p className="text-muted-foreground animate-pulse">Thinking...</p>
                         ) : isListening ? (
                             <p className="text-emerald-500 font-medium">Listening to you...</p>
                         ) : (
@@ -383,11 +262,11 @@ export function ActiveSession({
                         <div className="flex items-center gap-2">
                             <Button
                                 size="icon"
-                                variant={shouldBeListening ? "destructive" : "secondary"}
-                                onClick={toggleMic}
-                                className={cn("h-12 w-12 rounded-full transition-all shadow-lg", shouldBeListening && "animate-pulse")}
+                                variant={isListening ? "destructive" : "secondary"}
+                                onClick={toggleListening}
+                                className={cn("h-12 w-12 rounded-full transition-all shadow-lg", isListening && "animate-pulse", !connected && "opacity-50 pointer-events-none")}
                             >
-                                {shouldBeListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                                {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                             </Button>
                             {/* User Video PiP */}
                             <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-border bg-black">
@@ -422,7 +301,7 @@ export function ActiveSession({
                             size="icon"
                             className="h-12 w-12 rounded-full"
                             onClick={() => handleSendMessage()}
-                            disabled={isAIProcessing || (!transcript && !manualInput)}
+                            disabled={!connected || !manualInput.trim()}
                         >
                             <Send className="h-5 w-5" />
                         </Button>
@@ -437,19 +316,19 @@ export function ActiveSession({
                         <MessageSquare className="h-4 w-4 text-primary" />
                         Transcript
                     </h3>
-                    <Badge variant="outline" className="text-xs font-mono">{messages.length} messages</Badge>
+                    <Badge variant="outline" className="text-xs font-mono">{internalHookMessages.length} messages</Badge>
                 </div>
 
                 {/* Messages List using div overflow instead of ScrollArea to ensure standard behavior if component missing */}
                 <div id="transcript-viewport" className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
-                    {messages.length === 0 && (
+                    {internalHookMessages.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 space-y-2">
                             <Cpu className="h-12 w-12" />
                             <p>Conversation will appear here...</p>
                         </div>
                     )}
 
-                    {messages.map((msg, i) => (
+                    {internalHookMessages.map((msg, i) => (
                         <motion.div
                             key={i}
                             initial={{ opacity: 0, y: 10 }}
@@ -477,35 +356,7 @@ export function ActiveSession({
                         </motion.div>
                     ))}
 
-                    {/* Interim Result */}
-                    {(transcript || interimTranscript) && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="flex gap-4 ml-auto flex-row-reverse max-w-[90%]"
-                        >
-                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-primary animate-pulse">
-                                <User className="h-4 w-4" />
-                            </div>
-                            <div className="rounded-2xl p-4 text-sm bg-primary/5 border border-dashed border-primary/20 text-muted-foreground rounded-tr-none">
-                                {transcript} <span className="opacity-50">{interimTranscript}</span>
-                                <span className="inline-block w-2 H-4 bg-primary align-middle ml-1 animate-pulse">|</span>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {isAIProcessing && (
-                        <div className="flex gap-4 max-w-[90%]">
-                            <div className="h-8 w-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-500 animate-spin">
-                                <RotateCcw className="h-4 w-4" />
-                            </div>
-                            <div className="flex gap-1 items-center h-10 px-4 rounded-full bg-card border border-border">
-                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" />
-                            </div>
-                        </div>
-                    )}
+                    <div ref={scrollAreaRef} />
                 </div>
 
                 {/* Input Area */}
@@ -520,8 +371,8 @@ export function ActiveSession({
                                     handleSendMessage()
                                 }
                             }}
-                            placeholder={shouldBeListening ? "Typing disabled while Mic is on..." : "Type your response here..."}
-                            disabled={shouldBeListening}
+                            placeholder={connected ? "Type your response here..." : "Connecting..."}
+                            disabled={!connected}
                             className="min-h-[50px] max-h-[150px] pr-12 bg-background/50 border-white/10 resize-none focus:ring-primary/20"
                         />
                         <Button

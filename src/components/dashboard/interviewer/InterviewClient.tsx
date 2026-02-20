@@ -36,7 +36,6 @@ export function InterviewClient() {
     // Interview State
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [isAIProcessing, setIsAIProcessing] = useState(false)
-    const [isAISpeaking, setIsAISpeaking] = useState(false)
     const [feedbackReport, setFeedbackReport] = useState<string | null>(null)
     const startTimeRef = useRef<number>(0)
 
@@ -161,10 +160,6 @@ export function InterviewClient() {
                         setMessages={setMessages}
                         jobDescription={jobDescription}
                         language={language}
-                        isAISpeaking={isAISpeaking}
-                        setIsAISpeaking={setIsAISpeaking}
-                        isAIProcessing={isAIProcessing}
-                        setIsAIProcessing={setIsAIProcessing}
                         onEnd={handleEndInterview}
                     />
                 )}

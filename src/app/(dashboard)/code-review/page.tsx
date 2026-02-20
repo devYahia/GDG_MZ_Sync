@@ -72,7 +72,7 @@ export default function CodeReviewPage() {
             }
 
             const { job_id, stream_url } = await res.json()
-            setSteps([{ type: "step", message: `🚀 Review started (job: ${job_id.slice(0, 8)}…)` }])
+            setSteps([{ type: "step", message: `Review started (job: ${job_id.slice(0, 8)}…)` }])
 
             // 2. GET /review/{job_id} → SSE stream
             const eventSource = new EventSource(`${API_BASE}${stream_url}`)
@@ -85,7 +85,7 @@ export default function CodeReviewPage() {
                     const payload = JSON.parse(e.data)
 
                     if (eventType === "report") {
-                        setSteps((prev) => [...prev, { type: "report", message: "📋 Report generated" }])
+                        setSteps((prev) => [...prev, { type: "report", message: "Report generated" }])
                         setReport(payload.data)
                         setShowReport(true)
                     } else if (eventType === "done") {
@@ -248,23 +248,25 @@ export default function CodeReviewPage() {
                                                 const Icon = config.icon
                                                 return (
                                                     <motion.div
+                                                        layout
                                                         key={index}
-                                                        initial={{ opacity: 0, x: -20 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ duration: 0.3 }}
+                                                        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                        transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 25 }}
                                                         className="relative"
                                                     >
                                                         {/* Timeline Dot/Icon */}
-                                                        <div className={`absolute -left-[33px] p-1.5 rounded-full border-2 border-background ${config.bg} ${config.color} shadow-sm z-10`}>
+                                                        <div className={`absolute -left-[33px] p-1.5 rounded-full border-2 border-background ${config.bg} ${config.color} shadow-sm z-10 transition-colors duration-300`}>
                                                             <Icon className="h-3 w-3" />
                                                         </div>
 
                                                         {/* Content */}
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="text-sm font-medium text-foreground leading-none">
+                                                        <div className="flex flex-col gap-1 backdrop-blur-sm bg-white/5 border border-white/10 p-3 rounded-lg shadow-inner">
+                                                            <span className="text-sm font-medium text-foreground tracking-wide">
                                                                 {step.message}
                                                             </span>
-                                                            <span className="text-xs text-muted-foreground capitalize">
+                                                            <span className="text-xs text-muted-foreground capitalize font-semibold tracking-wider">
                                                                 {step.type}
                                                             </span>
                                                         </div>

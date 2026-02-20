@@ -244,7 +244,7 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
         # Step 1: Clone
         yield {
             "event": "step",
-            "data": '{"message": "🔄 Cloning repository..."}'
+            "data": '{"message": "Cloning repository..."}'
         }
         
         temp_dir = tempfile.mkdtemp()
@@ -265,13 +265,13 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
         
         yield {
             "event": "step",
-            "data": '{"message": "✅ Repository cloned successfully"}'
+            "data": '{"message": "Repository cloned successfully"}'
         }
         
         # Step 2: Extract code files
         yield {
             "event": "step",
-            "data": '{"message": "📁 Scanning for code files..."}'
+            "data": '{"message": "Scanning for code files..."}'
         }
         
         file_count = 0
@@ -306,7 +306,7 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
         
         yield {
             "event": "step",
-            "data": f'{{"message": "✅ Found {code_file_count} code files to analyze"}}'
+            "data": f'{{"message": "Found {code_file_count} code files to analyze"}}'
         }
         
         # Step 3: Comprehensive analysis of each file
@@ -318,19 +318,19 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
             
             yield {
                 "event": "file",
-                "data": f'{{"message": "🔍 Analyzing {relative_path} ({analyzed_count}/{min(code_file_count, 20)})..."}}'
+                "data": f'{{"message": "Analyzing {relative_path} ({analyzed_count}/{min(code_file_count, 20)})..."}}'
             }
             
             # Execute file
             yield {
                 "event": "execute",
-                "data": f'{{"message": "  ⚙️ Executing {relative_path} ({file_data["language"]})..."}}'
+                "data": f'{{"message": "  Executing {relative_path} ({file_data["language"]})..."}}'
             }
             
             exec_result = await execute_file(file_data["path"], file_data["language"])
             
             # Report execution result
-            exec_status = "✅ Success" if exec_result["success"] else f"❌ Failed (exit {exec_result['exit_code']})"
+            exec_status = "Success" if exec_result["success"] else f"Failed (exit {exec_result['exit_code']})"
             yield {
                 "event": "execute",
                 "data": f'{{"message": "    → {exec_status}"}}'
@@ -339,14 +339,14 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
             # Lint file
             yield {
                 "event": "lint",
-                "data": f'{{"message": "  🔍 Linting {relative_path}..."}}'
+                "data": f'{{"message": "  Linting {relative_path}..."}}'
             }
             
             lint_result = await lint_file(file_data["path"], file_data["language"])
             
             # Report lint result
             if lint_result.get("available"):
-                lint_status = "✅ Clean" if lint_result.get("clean") else f"⚠️ {lint_result.get('issues_count', 0)} issues"
+                lint_status = "Clean" if lint_result.get("clean") else f"{lint_result.get('issues_count', 0)} issues"
                 yield {
                     "event": "lint",
                     "data": f'{{"message": "    → {lint_status}"}}'
@@ -355,7 +355,7 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
             # AI Analysis
             yield {
                 "event": "step",
-                "data": f'{{"message": "  🤖 Running AI analysis on {relative_path}..."}}'
+                "data": f'{{"message": "  Running AI analysis on {relative_path}..."}}'
             }
             
             ai_analysis = await analyze_file_with_ai(
@@ -370,10 +370,10 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
             total_score += file_score
             
             # Report AI analysis result
-            verdict_emoji = "✅" if ai_analysis["verdict"] == "PASS" else "⚠️" if ai_analysis["verdict"] == "WARN" else "❌"
+            verdict_prefix = "PASS" if ai_analysis["verdict"] == "PASS" else "WARN" if ai_analysis["verdict"] == "WARN" else "FAIL"
             yield {
                 "event": "step",
-                "data": f'{{"message": "    → {verdict_emoji} Score: {file_score}/10 - {ai_analysis["verdict"]}"}}'
+                "data": f'{{"message": "    → [{verdict_prefix}] Score: {file_score}/10"}}'
             }
             
             # Store review
@@ -400,7 +400,7 @@ async def comprehensive_code_review_stream(job_id: str, repo_url: str, review_jo
         # Step 4: Generate comprehensive report
         yield {
             "event": "step",
-            "data": '{"message": "📝 Generating comprehensive report..."}'
+            "data": '{"message": "Generating comprehensive report..."}'
         }
         
         total_lines = sum(f["lines"] for f in code_files.values())

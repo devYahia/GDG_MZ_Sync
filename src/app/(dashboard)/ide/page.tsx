@@ -177,7 +177,7 @@ export default function IDEPage() {
             }
 
             const { job_id, stream_url } = await res.json()
-            setReviewSteps([{ type: "step", message: `🚀 Review started (${job_id.slice(0, 8)}…)` }])
+            setReviewSteps([{ type: "step", message: `Review started (${job_id.slice(0, 8)}…)` }])
 
             // If we have a pending redirect, do it now
             if (pendingRedirectRef.current) {
@@ -198,7 +198,7 @@ export default function IDEPage() {
                         console.log(`[SSE] ${eventType}:`, payload) // Debug logging
 
                         if (eventType === "report") {
-                            setReviewSteps(prev => [...prev, { type: "report", message: "📋 Report generated" }])
+                            setReviewSteps(prev => [...prev, { type: "report", message: "Report generated" }])
                             setReport(payload.data || "")
                             setShowReport(true)
                         } else if (eventType === "done") {

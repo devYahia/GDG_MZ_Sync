@@ -32,7 +32,11 @@ from application.llm_service import (
 )
 from application.repo_service import repo_service
 from application.daytona_service import daytona_service
+from application.enhanced_review_service import comprehensive_code_review_stream
 from infrastructure.database import db
+
+# Store streaming jobs for repo review
+review_jobs = {}
 
 # Load environment
 from pathlib import Path as _Path
@@ -197,6 +201,39 @@ async def extract_repo(request: RepoRequest):
     if not result:
         raise HTTPException(status_code=400, detail="Failed to extract repository")
     return result
+
+class RepoReviewRequest(BaseModel):
+    repo_url: str
+
+@app.post("/api/repo/review")
+async def start_repo_review(req: RepoReviewRequest):
+    job_id = f"job-{uuid.uuid4().hex[:8]}"
+    review_jobs[job_id] = {
+        "url": req.repo_url,
+        "status": "starting",
+        "result": None
+    }
+    return {"job_id": job_id, "stream_url": f"/api/repo/review/stream/{job_id}"}
+
+@app.get("/api/repo/review/stream/{job_id}")
+async def stream_repo_review(request: Request, job_id: str):
+    if job_id not in review_jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_data = review_jobs[job_id]
+    
+    async def event_generator():
+        try:
+            async for payload in comprehensive_code_review_stream(job_id, job_data["url"], review_jobs):
+                if await request.is_disconnected():
+                    break
+                # Yield in SSE format: event: <event>\ndata: <json>\n\n
+                yield dict(event=payload["event"], data=payload["data"])
+        except Exception as e:
+            yield dict(event="error", data=f'{{"message": "Internal error: {str(e)}"}}')
+
+    return EventSourceResponse(event_generator())
+
 @app.post("/api/interview/chat")
 async def interview_chat(req: InterviewChatRequest):
     try:

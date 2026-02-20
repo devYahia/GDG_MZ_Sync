@@ -57,8 +57,8 @@ export default function CodeReviewPage() {
         }
 
         try {
-            // 1. POST /api/review → get job_id
-            const res = await fetch(`${API_BASE}/api/review`, {
+            // 1. POST /api/repo/review → get job_id
+            const res = await fetch(`${API_BASE}/api/repo/review`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ repo_url: repoUrl }),

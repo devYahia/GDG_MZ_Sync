@@ -88,16 +88,15 @@ export default function LandingPage() {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    '@type': 'Organization',
     name: 'Interna Virtual',
-    applicationCategory: 'EducationalApplication',
-    operatingSystem: 'Any',
-    description: 'An AI-driven virtual internship simulator for software engineers.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
+    alternateName: 'Interna',
+    url: 'https://interna.work',
+    logo: 'https://interna.work/og-image.png',
+    description: 'Interna Virtual is the premier AI-driven virtual internship simulator for software engineers.',
+    sameAs: [
+      'https://github.com/interna-virtual' // Replace with real links if available
+    ],
   }
 
   return (

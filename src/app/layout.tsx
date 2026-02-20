@@ -25,17 +25,21 @@ const appUrl = process.env.AUTH_URL || "https://interna.work"
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: "Interna. | Virtual Internship for Software Engineers",
+  title: {
+    default: "Interna Virtual | AI Internship Simulator",
+    template: "%s | Interna Virtual"
+  },
   description:
-    "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system. Experience real software engineering tasks, prep for technical interviews, and build your portfolio.",
+    "Interna Virtual is the premier AI-driven virtual internship simulator for software engineers. Bridge the gap between a 4.0 GPA and a deployed system by experiencing real-world engineering tasks.",
   keywords: [
+    "interna",
+    "interna virtual",
+    "interna work",
     "virtual internship for software engineers",
     "software engineering internship",
     "internship simulator",
     "AI code review",
     "technical interview prep",
-    "Forage alternative",
-    "developer portfolio builder"
   ],
   alternates: {
     canonical: "/",
@@ -44,22 +48,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: appUrl,
-    title: "Interna. | Virtual Internship for Software Engineers",
-    description: "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system.",
-    siteName: "Interna",
+    title: "Interna Virtual | AI Internship Simulator for Software Engineers",
+    description: "Interna Virtual bridges the academic-professional divide. Gain real-world software engineering experience through an AI-driven behavioral simulator.",
+    siteName: "Interna Virtual",
     images: [
       {
-        url: `${appUrl}/og-image.png`, // Placeholder for future OG Image
+        url: `${appUrl}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "Interna - Building Senior Developers",
+        alt: "Interna Virtual - Software Engineering Simulator",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Interna. | Virtual Internship for Software Engineers",
-    description: "The AI-Driven Virtual Internship Simulator that bridges the gap between a 4.0 GPA and a deployed system.",
+    title: "Interna Virtual | AI Internship Simulator",
+    description: "Interna Virtual bridges the academic-professional divide. Gain real-world software engineering experience.",
     images: [`${appUrl}/og-image.png`],
   },
 }

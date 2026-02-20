@@ -21,7 +21,7 @@ export default async function InterviewLayout({
     return (
         <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30">
             {/* We strip away all Dashboard sidebars here to provide a distraction-free, full-screen experience */}
-            <main className="h-screen w-full overflow-hidden flex flex-col">
+            <main className="min-h-screen w-full overflow-y-auto overflow-x-hidden flex flex-col">
                 {children}
             </main>
         </div>

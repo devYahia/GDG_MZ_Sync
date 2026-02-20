@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { ChatMessage } from "./InterviewClient"
 import { getBackendBase } from "@/lib/api-config"
+import { useGeminiLive } from "@/hooks/useGeminiLive"
 
 interface ActiveSessionProps {
     stream: MediaStream | null
@@ -67,7 +68,7 @@ export function ActiveSession({
     }, [JSON.stringify(internalHookMessages), setMessages]);
 
     // Determine if AI is truly speaking based on WS state OR external prop
-    const currentlyAISpeaking = isAISpeaking || liveIsSpeaking;
+    const currentlyAISpeaking = liveIsSpeaking;
 
     // --- Timer ---
     useEffect(() => {
@@ -87,7 +88,7 @@ export function ActiveSession({
     useEffect(() => {
         if (!connectionStarted && !connected && stream) {
             setConnectionStarted(true)
-            startConnection(jobDescription).catch(e => console.error(e))
+            startConnection(jobDescription).catch((e: any) => console.error(e))
         }
 
         return () => {
@@ -188,7 +189,7 @@ export function ActiveSession({
     useEffect(() => {
         const viewport = document.getElementById("transcript-viewport")
         if (viewport) viewport.scrollTop = viewport.scrollHeight
-    }, [messages, interimTranscript])
+    }, [messages])
 
 
     return (
@@ -221,10 +222,10 @@ export function ActiveSession({
                     {/* The Sphere */}
                     <motion.div
                         animate={{
-                            scale: isAISpeaking ? [1, 1.05, 1] : [1, 1.02, 1],
-                            filter: isAISpeaking ? "brightness(1.3) drop-shadow(0 0 20px rgba(168,85,247,0.4))" : "brightness(1) drop-shadow(0 0 10px rgba(168,85,247,0.1))",
+                            scale: currentlyAISpeaking ? [1, 1.05, 1] : [1, 1.02, 1],
+                            filter: currentlyAISpeaking ? "brightness(1.3) drop-shadow(0 0 20px rgba(168,85,247,0.4))" : "brightness(1) drop-shadow(0 0 10px rgba(168,85,247,0.1))",
                         }}
-                        transition={{ duration: isAISpeaking ? 0.4 : 3, repeat: Infinity, ease: "easeInOut" }}
+                        transition={{ duration: currentlyAISpeaking ? 0.4 : 3, repeat: Infinity, ease: "easeInOut" }}
                         className="h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative z-10 flex items-center justify-center"
                     >
                         {/* Shine */}
@@ -328,7 +329,7 @@ export function ActiveSession({
                         </div>
                     )}
 
-                    {internalHookMessages.map((msg, i) => (
+                    {internalHookMessages.map((msg: ChatMessage, i: number) => (
                         <motion.div
                             key={i}
                             initial={{ opacity: 0, y: 10 }}

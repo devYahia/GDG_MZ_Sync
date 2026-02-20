@@ -152,20 +152,41 @@ function InterviewSessionClient() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages, isThinking])
 
-    const speakText = (text: string) => {
+    const speakText = async (text: string) => {
+        // Clean markdown from text before speaking
+        const cleanText = text.replace(/[*_#`]/g, "")
+
+        try {
+            // Attempt to use Premium Gemini Audio Output first!
+            const res = await fetch("/api/interview/tts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: cleanText, voice: "Aoede" }) // Aoede is professional, calm and authoritative
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                if (data.audioBase64) {
+                    setIsSpeaking(true)
+                    const audio = new Audio(`data:audio/wav;base64,${data.audioBase64}`)
+                    audio.onended = () => setIsSpeaking(false)
+                    audio.play()
+                    return // Success! Do not fallback
+                }
+            }
+        } catch (e) {
+            console.error("Failed Gemini TTS, falling back to browser.", e)
+        }
+
+        // Fallback to Native Browser TTS if Gemini fails
         if (!synthesisRef.current) return
 
         synthesisRef.current.cancel() // Stop any current speech
-
-        // Clean markdown from text before speaking (basic regex)
-        const cleanText = text.replace(/[*_#`]/g, "")
-
         const utterance = new SpeechSynthesisUtterance(cleanText)
         if (voiceRef.current) {
             utterance.voice = voiceRef.current
         }
         utterance.rate = 1.05
-        utterance.pitch = 1.0
 
         utterance.onstart = () => setIsSpeaking(true)
         utterance.onend = () => setIsSpeaking(false)

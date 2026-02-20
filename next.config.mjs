@@ -12,10 +12,16 @@ const nextConfig = {
         appIsrStatus: false,
     },
     async rewrites() {
-        const isProd = process.env.NODE_ENV === 'production';
-        const backendBase = process.env.NEXT_PUBLIC_API_URL
-            || process.env.API_URL
-            || (isProd ? 'http://backend:8001' : 'http://127.0.0.1:8001');
+        // Enforce direct docker routing in Docker production environments to prevent ENOTFOUND
+        const isDockerProd = process.env.NODE_ENV === 'production' && process.env.IS_DOCKER !== 'false';
+
+        let backendBase = 'http://127.0.0.1:8001';
+        if (isDockerProd) {
+            backendBase = process.env.INTERNAL_BACKEND_URL || 'http://backend:8001';
+        } else {
+            backendBase = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://127.0.0.1:8001';
+        }
+
         return [
             {
                 source: '/api/backend/:path*',

@@ -71,7 +71,7 @@ export function SetupStep({
 
     return (
         <motion.div
-            className="flex h-full w-full flex-col items-center justify-center p-6"
+            className="flex min-h-[max-content] w-full flex-col items-center justify-center py-12 px-6 pb-24"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}

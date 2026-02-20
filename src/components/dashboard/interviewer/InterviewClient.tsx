@@ -142,7 +142,7 @@ export function InterviewClient() {
     }
 
     return (
-        <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
+        <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-y-auto overflow-x-hidden bg-background">
             <AnimatePresence mode="wait">
                 {stage === "SETUP" && (
                     <SetupStep

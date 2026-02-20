@@ -29,11 +29,12 @@ export async function deleteUserProject(id: string, isCustom: boolean): Promise<
         const { eq, and } = await import("drizzle-orm");
 
         if (isCustom) {
+            const uuid = id.replace("sim-", "");
             const { simulations } = await import("@/infrastructure/database/schema/simulations");
-            await db.delete(simulations).where(and(eq(simulations.id, id), eq(simulations.userId, session.user.id)));
+            await db.delete(simulations).where(and(eq(simulations.id, uuid), eq(simulations.userId, session.user.id)));
         } else {
             const { internProgress } = await import("@/infrastructure/database/schema/intern-progress");
-            await db.delete(internProgress).where(and(eq(internProgress.id, id), eq(internProgress.userId, session.user.id)));
+            await db.delete(internProgress).where(and(eq(internProgress.projectId, id), eq(internProgress.userId, session.user.id)));
         }
 
         const { revalidatePath } = await import("next/cache");

@@ -14,6 +14,7 @@ import {
     Loader2,
     Search,
     Plus,
+    Trash2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,8 @@ import { Input } from "@/components/ui/input"
 import { FIELD_CONFIG, type TaskField } from "@/lib/tasks"
 import { cn } from "@/lib/utils"
 import type { UserProject, ProjectStatus } from "@/application/dto/project-dto"
+
+import { deleteUserProject } from "@/app/actions/projects"
 
 // --- Types ---
 type TabFilter = "all" | "in_progress" | "completed"
@@ -103,7 +106,8 @@ function TabButton({
 }
 
 // --- Project Card ---
-function UserProjectCard({ project }: { project: UserProject }) {
+function UserProjectCard({ project, onDelete }: { project: UserProject, onDelete: (id: string, isCustom: boolean) => void }) {
+    const [isDeleting, setIsDeleting] = useState(false)
     const fieldConfig = FIELD_CONFIG[project.field as TaskField]
     const FieldIcon = fieldConfig?.icon
     const statusConfig = getStatusConfig(project.status)
@@ -154,21 +158,43 @@ function UserProjectCard({ project }: { project: UserProject }) {
                             )}
                         </div>
 
-                        {/* Status badge */}
-                        <div
-                            className={cn(
-                                "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                                statusConfig.bg,
-                                statusConfig.color
-                            )}
-                        >
-                            <StatusIcon
+                        {/* Status badge & Delete Button */}
+                        <div className="flex items-center gap-2">
+                            <div
                                 className={cn(
-                                    "h-3 w-3",
-                                    project.status === "in_progress" && "animate-spin"
+                                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                                    statusConfig.bg,
+                                    statusConfig.color
                                 )}
-                            />
-                            {statusConfig.label}
+                            >
+                                <StatusIcon
+                                    className={cn(
+                                        "h-3 w-3",
+                                        project.status === "in_progress" && "animate-spin"
+                                    )}
+                                />
+                                {statusConfig.label}
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    if (confirm("Are you sure you want to delete this project? Data will be lost.")) {
+                                        setIsDeleting(true)
+                                        // Wait a tiny bit for the spinner to render before main thread blocks
+                                        setTimeout(() => onDelete(project.id, project.type === "custom"), 50)
+                                    }
+                                }}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                            </Button>
                         </div>
                     </div>
 
@@ -293,9 +319,22 @@ function EmptyState({ filter }: { filter: TabFilter }) {
 }
 
 // --- Main Page ---
-export function MyProjectsPage({ projects }: MyProjectsPageProps) {
+export function MyProjectsPage({ projects: initialProjects }: MyProjectsPageProps) {
+    const [projects, setProjects] = useState<UserProject[]>(initialProjects)
     const [activeTab, setActiveTab] = useState<TabFilter>("all")
     const [searchQuery, setSearchQuery] = useState("")
+
+    // Handle Delete locally for speed
+    const handleDelete = async (id: string, isCustom: boolean) => {
+        const res = await deleteUserProject(id, isCustom)
+        if (res.success) {
+            setProjects(prev => prev.filter(p => p.id !== id))
+        } else {
+            alert(res.error || "Failed to delete project")
+            // refresh page to restore state on failure
+            window.location.reload()
+        }
+    }
 
     // Filter projects
     const filtered = projects.filter((p) => {
@@ -392,7 +431,7 @@ export function MyProjectsPage({ projects }: MyProjectsPageProps) {
                 >
                     <AnimatePresence mode="popLayout">
                         {filtered.map((project) => (
-                            <UserProjectCard key={project.id} project={project} />
+                            <UserProjectCard key={project.id} project={project} onDelete={handleDelete} />
                         ))}
                     </AnimatePresence>
                 </motion.div>

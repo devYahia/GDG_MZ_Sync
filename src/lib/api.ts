@@ -168,7 +168,7 @@ export async function postProjectChat(data: ProjectChatRequest): Promise<{ reply
 }
 
 export async function postCodeReview(data: CodeReviewRequest): Promise<{ feedback: string; approved: boolean }> {
-    const url = `${API_BASE_URL}/api/review`
+    const url = `/api/review`
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

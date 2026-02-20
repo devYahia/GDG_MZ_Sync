@@ -44,6 +44,40 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
     const [analysis, setAnalysis] = useState<ChatAnalysisResponse | null>(null)
     const [analysisLoading, setAnalysisLoading] = useState(false)
     const [completedMilestones, setCompletedMilestones] = useState<number[]>([])
+    const [isRestoring, setIsRestoring] = useState(true)
+
+    // ── Local Storage Restoration ──
+    useEffect(() => {
+        try {
+            const savedState = localStorage.getItem(`interna-project-state-${task.id}`)
+            if (savedState) {
+                const parsed = JSON.parse(savedState)
+                if (parsed.simulation) {
+                    setSimulation(parsed.simulation)
+                    setHasStarted(parsed.hasStarted ?? true)
+                    setTeamMode(parsed.teamMode ?? "group")
+                    setMessagesByPersona(parsed.messagesByPersona ?? {})
+                    setCompletedMilestones(parsed.completedMilestones ?? [])
+                }
+            }
+        } catch (e) {
+            console.error("Failed to parse saved project state", e)
+        }
+        setIsRestoring(false)
+    }, [task.id])
+
+    // ── Save to Local Storage ──
+    useEffect(() => {
+        if (!isRestoring && simulation) {
+            localStorage.setItem(`interna-project-state-${task.id}`, JSON.stringify({
+                simulation,
+                hasStarted,
+                teamMode,
+                messagesByPersona,
+                completedMilestones
+            }))
+        }
+    }, [isRestoring, simulation, hasStarted, teamMode, messagesByPersona, completedMilestones, task.id])
 
     const generate = useCallback(async () => {
         setIsLoading(true)
@@ -156,6 +190,10 @@ export function ProjectPageClient({ task }: ProjectPageClientProps) {
 
 
     // ── Configuration Screen ──
+    if (isRestoring) {
+        return <div className="flex flex-1 items-center justify-center bg-black" />
+    }
+
     if (!hasStarted) {
         return (
             <div className="flex flex-1 items-center justify-center bg-black p-8">

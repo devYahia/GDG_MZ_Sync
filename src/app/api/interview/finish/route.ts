@@ -1,0 +1,92 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/infrastructure/auth/auth";
+import { getBackendBase } from "@/lib/api-config";
+import { db } from "@/infrastructure/database/drizzle";
+import { interviewSessions, activityLog } from "@/infrastructure/database/schema";
+import { z } from "zod";
+import { eq } from "drizzle-orm";
+
+const finishSchema = z.object({
+    sessionId: z.string().uuid(),
+    trigger: z.enum(["user_completed", "timeout", "abandoned"]).default("user_completed"),
+    messages: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string()
+    })),
+    jobDescription: z.string().default("Senior Software Engineer"),
+    language: z.enum(["en", "ar"]).default("en")
+});
+
+export async function POST(req: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const body = await req.json();
+        const parsed = finishSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Invalid payload", details: parsed.error.format() }, { status: 400 });
+        }
+
+        const backendBase = getBackendBase();
+        const url = `${backendBase}/api/interview/finish`;
+
+        // Longer timeout for report generation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+        const payload = {
+            messages: parsed.data.messages,
+            job_description: parsed.data.jobDescription,
+            language: parsed.data.language
+        };
+
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+            const text = await res.text();
+            return NextResponse.json({ error: text || "Backend Report Generation Error" }, { status: res.status });
+        }
+
+        const reportData = await res.json();
+
+        await db.update(interviewSessions)
+            .set({
+                status: "completed",
+                completedAt: new Date(),
+                overallRating: reportData.overallScore ?? 0,
+                feedbackScores: reportData.report ?? {}
+            })
+            .where(eq(interviewSessions.id, parsed.data.sessionId));
+
+        await db.insert(activityLog).values({
+            userId: session.user.id,
+            eventType: "interview_completed",
+            contextType: "interview",
+            contextId: parsed.data.sessionId,
+            metadata: { score: reportData.overallScore }
+        });
+
+        return NextResponse.json(reportData);
+
+    } catch (error: any) {
+        console.error("[INTERVIEW_FINISH]", error);
+        const isTimeout = error.name === 'AbortError';
+        const isNetwork = error.message?.includes("fetch") || error.message?.includes("ECONNREFUSED");
+
+        return NextResponse.json(
+            { error: isTimeout ? "Report generation timed out" : (isNetwork ? "Service Unavailable" : "Internal Error") },
+            { status: isTimeout ? 504 : (isNetwork ? 502 : 500) }
+        );
+    }
+}

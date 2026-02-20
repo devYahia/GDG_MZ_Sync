@@ -144,6 +144,13 @@ export function ProjectIDE({ task }: ProjectIDEProps) {
     setRunLoading(true)
     setOutput("")
     const codeToRun = getPrimaryCode()
+
+    if (activeFileId?.endsWith(".py")) {
+      setOutput("Backend Python execution is currently not deployed. \nThe sandbox is strictly limited to JavaScript evaluation.")
+      setRunLoading(false)
+      return
+    }
+
     try {
       const __logs: string[] = []
       const __console = {

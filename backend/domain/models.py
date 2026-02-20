@@ -169,3 +169,7 @@ class ChatAnalysisResponse(BaseModel):
     technical_skills: List[SkillMetric]
     summary: str
     overall_score: int
+
+class InterviewFeedbackResponse(BaseModel):
+    overallScore: int
+    report: str

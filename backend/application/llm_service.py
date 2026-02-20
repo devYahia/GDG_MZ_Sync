@@ -378,8 +378,8 @@ def _interviewer_system_prompt(req: InterviewChatRequest) -> str:
     lang = req.language
     
     # Base persona and context
-    role_en = "You are Interna's AI Interviewer. Introduce yourself as such in the first message."
-    role_ar = "أنت محاور Interna للذكاء الاصطناعي. عرف عن نفسك بهذه الصفة في أول رسالة."
+    role_en = "You are a Senior Engineering Manager at a top tech company acting as the interviewer. Maintain a professional, firm, yet constructive persona. Introduce yourself briefly as the Engineering Manager in the first message."
+    role_ar = "أنت مدير هندسي أول (Senior Engineering Manager) في شركة تقنية كبرى وتقوم بدور المحاور. حافظ على شخصية مهنية، حازمة، ولكن بناءة. عرف بنفسك باختصار كمدير هندسي في أول رسالة."
     
     style_en = """
     - Your goal is to assess the candidate's soft skills, technical depth, and cultural fit based on the Job Description provided.
@@ -454,6 +454,8 @@ async def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
     Generates a final feedback report based on the interview history.
     """
     llm = _get_llm(model="gemini-2.5-flash", temperature=0.5)
+    from domain.models import InterviewFeedbackResponse
+    structured_llm = llm.with_structured_output(InterviewFeedbackResponse)
     
     lang = req.language
     job_context = f"Job Description: {req.job_description}"
@@ -498,8 +500,8 @@ async def generate_interview_feedback(req: InterviewFeedbackRequest) -> dict:
         
     messages.append(HumanMessage(content=f"\n\n---\n{final_instruction}"))
     
-    response = await llm.ainvoke(messages)
-    return {"report": response.content}
+    response = await structured_llm.ainvoke(messages)
+    return response.model_dump()
 
 async def generate_chat_analysis(req: ChatAnalysisRequest):
     """Analyzes chat history to evaluate soft and technical skills."""

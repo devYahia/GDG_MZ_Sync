@@ -22,7 +22,7 @@ export async function GET() {
         // Note: For maximum security in the future, we should use Vertex AI with Service Accounts 
         // to generate short-lived GCP tokens instead of passing the AI Studio API key.
         const host = "generativelanguage.googleapis.com";
-        const model = "models/gemini-2.5-flash"; // Supported model for Live API
+        const model = "models/gemini-2.0-flash"; // Supported model for Live API
         const wsUrl = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
         return NextResponse.json({

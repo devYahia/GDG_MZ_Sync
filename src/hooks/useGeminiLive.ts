@@ -109,8 +109,18 @@ export function useGeminiLive(language: "en" | "ar") {
         try {
             // 1. Fetch short-lived token/WS URL from our backend
             const res = await fetch("/api/interview/live-token");
-            if (!res.ok) throw new Error("Failed to secure connection token");
-            const { wsUrl } = await res.json();
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error("Live Token Error:", res.status, errText);
+                throw new Error("Failed to secure connection token: " + res.statusText);
+            }
+
+            const data = await res.json();
+            const wsUrl = data.wsUrl;
+
+            if (!wsUrl) {
+                throw new Error("No WebSocket URL returned from token endpoint.");
+            }
 
             // 2. Setup AudioContext immediately (requires user gesture)
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({
@@ -134,7 +144,7 @@ export function useGeminiLive(language: "en" | "ar") {
 
                 const setupMessage = {
                     setup: {
-                        model: "models/gemini-2.5-flash",
+                        model: "models/gemini-2.0-flash",
                         systemInstruction: {
                             parts: [{
                                 text: `You are an expert technical interviewer evaluating a candidate for the role described below.
@@ -176,7 +186,11 @@ Guidelines: Be natural, brief, conversational, and evaluate their answers progre
                 disconnect();
             };
 
-            ws.onclose = () => {
+            ws.onclose = (e) => {
+                console.warn("Live API WebSocket Closed:", e.code, e.reason);
+                if (e.code !== 1000 && connected) {
+                    toast.error("Live audio connection closed unexpectedly");
+                }
                 disconnect();
             };
 

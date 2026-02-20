@@ -6,6 +6,7 @@ import { GetProgressUseCase } from "@/application/use-cases/progress/get-progres
 import { UpdateProgressUseCase } from "@/application/use-cases/progress/update-progress";
 import { UpsertProgressParams } from "@/domain/repositories/progress-repository";
 import { revalidatePath } from "next/cache";
+import { updateProgressSchema } from "@/lib/validations";
 
 const getProgressUseCase = new GetProgressUseCase(container.progressRepository);
 const updateProgressUseCase = new UpdateProgressUseCase(container.progressRepository);
@@ -22,8 +23,13 @@ export async function updateProgressAction(data: Omit<UpsertProgressParams, "use
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     try {
+        const validated = updateProgressSchema.safeParse(data);
+        if (!validated.success) {
+            return { error: validated.error.issues[0]?.message || "Invalid input" };
+        }
+
         const progress = await updateProgressUseCase.execute({
-            ...data,
+            ...validated.data,
             userId: session.user.id
         });
 

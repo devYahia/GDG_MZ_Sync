@@ -3,7 +3,7 @@
 import { signOut, auth } from "@/infrastructure/auth/auth";
 import { container } from "@/infrastructure/container";
 import { CreateUserParams } from "@/domain/repositories/user-repository";
-import { AuthError } from "next-auth";
+import { signupSchema, onboardingSchema } from "@/lib/validations";
 import { redirect } from "next/navigation";
 
 export async function loginAction(prevState: string | undefined, formData: FormData) {
@@ -21,7 +21,11 @@ export async function loginAction(prevState: string | undefined, formData: FormD
 
 export async function signupAction(data: CreateUserParams & { password?: string }) {
     try {
-        await container.signupUseCase.execute(data);
+        const validated = signupSchema.safeParse(data);
+        if (!validated.success) {
+            return { error: validated.error.issues[0]?.message || "Invalid input" };
+        }
+        await container.signupUseCase.execute(validated.data as any);
         return { success: true };
     } catch (error: any) {
         return { error: error.message };
@@ -74,11 +78,14 @@ export async function completeOnboardingAction(data: {
     if (!session?.user?.id) return { error: "Not authenticated" };
 
     try {
+        const validated = onboardingSchema.safeParse(data);
+        if (!validated.success) {
+            return { error: validated.error.issues[0]?.message || "Invalid input" };
+        }
+
         await container.completeOnboardingUseCase.execute({
             userId: session.user.id,
-            field: data.field,
-            experienceLevel: data.experienceLevel,
-            interests: data.interests,
+            ...validated.data,
         });
         return { success: true };
     } catch (e: any) {

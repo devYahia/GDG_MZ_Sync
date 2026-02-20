@@ -44,17 +44,30 @@ export async function POST(request: NextRequest) {
       ? `✅ *${userName}* passed review for *${projectTitle || projectId || "a project"}* (Interna)`
       : `📋 *${userName}* submitted *${projectTitle || projectId || "a project"}* for review (Interna)`
 
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    })
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sec timeout
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "Webhook request failed" }, { status: 502 })
+    try {
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        return NextResponse.json({ error: "Webhook request failed. Non-200 response." }, { status: 502 })
+      }
+      return NextResponse.json({ sent: true })
+    } catch (e: any) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        return NextResponse.json({ error: "Webhook request timed out." }, { status: 504 })
+      }
+      return NextResponse.json({ error: "Notify failed", details: e.message }, { status: 500 })
     }
-    return NextResponse.json({ sent: true })
-  } catch (e) {
-    return NextResponse.json({ error: "Notify failed" }, { status: 500 })
+  } catch (e: any) {
+    return NextResponse.json({ error: "Server error", details: e.message }, { status: 500 })
   }
 }

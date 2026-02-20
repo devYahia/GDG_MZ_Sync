@@ -65,8 +65,10 @@ export function AppSidebar() {
       animate={{ width }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-card/95 backdrop-blur-xl",
-        "shadow-xl shadow-black/5"
+        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-card/95 backdrop-blur-xl transition-all duration-300",
+        "shadow-xl shadow-black/5",
+        collapsed ? "w-[72px]" : "w-64",
+        "hidden sm:flex" // Hide completely on mobile for now since it doesn't have a burger menu handled in layout yet
       )}
     >
       {/* Logo */}

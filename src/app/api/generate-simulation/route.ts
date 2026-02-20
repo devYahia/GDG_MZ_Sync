@@ -60,11 +60,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: isNetwork
+        error: isNetwork ? "Service Unavailable" : "Internal Server Error",
+        details: isNetwork
           ? "Backend not reachable. Start the API with: cd backend && uvicorn main:app --reload"
           : message,
       },
-      { status: 502 }
+      { status: isNetwork ? 502 : 500 }
     )
   }
 }

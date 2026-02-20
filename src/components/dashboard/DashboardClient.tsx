@@ -41,7 +41,7 @@ export function DashboardClient({ data, showQuickStart }: DashboardClientProps) 
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[1px] w-[60%] bg-gradient-to-r from-transparent via-purple-500/20 dark:via-purple-500/40 to-transparent" />
             </div>
 
-            <div className="relative z-10 mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+            <div className="relative z-10 mx-auto max-w-7xl space-y-6 md:space-y-8 p-4 sm:p-6 md:p-8 lg:p-10">
                 {/* -- Hero Section -- */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}

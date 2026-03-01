@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono, MuseoModerno } from "next/font/google"
-import { AuthProvider } from "@/components/providers/AuthProvider"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { ThemeToaster } from "@/components/providers/ThemeToaster"
-import { auth } from "@/infrastructure/auth/auth"
 import "./globals.css"
 
 const inter = Inter({
@@ -68,23 +66,19 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${jetbrains.variable} ${museoModerno.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
-          <AuthProvider session={session}>
-            {children}
-            <ThemeToaster />
-          </AuthProvider>
+          {children}
+          <ThemeToaster />
         </ThemeProvider>
       </body>
     </html>
